@@ -1,8 +1,11 @@
 #include "Systick.h"
 
 volatile uint32_t SysTickCounter;
+uint32_t ticks=0;
+
 void SysTick_Handler()
 {
+  ticks++;
   if(SysTickCounter>0)
     SysTickCounter--;
 }
@@ -16,3 +19,9 @@ void msDelay(uint32_t delay)
   while (SysTickCounter>0);
    asm("nop"); 
 }
+uint32_t GetTick()
+{
+ return(ticks);
+}
+  
+
