@@ -25,35 +25,83 @@ USB_EPinfo EpData[EPCOUNT] =
 USBLIB_SetupPacket   *SetupPacket;
 volatile uint8_t      DeviceAddress = 0;
 
-const uint8_t USB_DEVICE_DESC[] =
-    {
-        (uint8_t)18,                        //    bLength
-        (uint8_t)USB_DEVICE_DESC_TYPE,      //    bDescriptorType
-        (uint8_t)0x00,                      //    bcdUSB
-        (uint8_t)0x02,                      //    bcdUSB
-        (uint8_t)USB_COMM,                  //    bDeviceClass
-        (uint8_t)0,                         //    bDeviceSubClass
-        (uint8_t)0,                         //    bDeviceProtocol
-        (uint8_t)8,                         //    bMaxPacketSize0
-        (uint8_t)LOBYTE(DEVICE_VENDOR_ID),  //    idVendor
-        (uint8_t)HIBYTE(DEVICE_VENDOR_ID),  //    idVendor
-        (uint8_t)LOBYTE(DEVICE_PRODUCT_ID), //    idProduct
-        (uint8_t)HIBYTE(DEVICE_PRODUCT_ID), //    idProduct
-        (uint8_t)0x00,                      //    bcdDevice
-        (uint8_t)0x01,                      //    bcdDevice
-        (uint8_t)1,                         //    iManufacturer
-        (uint8_t)2,                         //    iProduct
-        (uint8_t)3,                         //    iSerialNumbert
-        (uint8_t)1                          //    bNumConfigurations
-};
+const Typedef_USB_DEVICE_DESCRIPTOR sDeviceDescriptor={
+.bLength = 18, 
+.bDescriptorType = USB_DEVICE_DESC_TYPE,
+.bcdUSB_L = 0,
+.bcdUSB_H = 2,
+.bDeviceClass = USB_CLASS_IN_INTERFACE_DESCRIPTOR,
+.bDeviceSubClass = 0,
+.bDeviceProtocol = 0,
+.bMaxPacketSize0 = 8,
+.idVendor_L = LOBYTE(0x0483),
+.idVendor_H = HIBYTE(0x0483),
+.idProduct_L = LOBYTE(0x5711),
+.idProduct_H = HIBYTE(0x5711),
+.bcdDevice_L = 10,
+.bcdDevice_H = 1,
+.iManufacturer = 1,
+.iProduct = 2,
+.iSerialNumber = 3,
+.bNumConfigurations =1};
 
+const uint8_t aConfDescriptor[] = 
+    {
+// CONFIGURATION Descriptor  (Table 9-10 USB specification)
+        0x09,               //bLength: Configuration Descriptor size
+        USB_CFG_DESC_TYPE,  // bDescriptorType: Configuration
+        34, 0,              // wTotalLength low & high  sizeof (configuration + interface + endpoint + HID) 34bytes
+        0x01,               // bNumInterfaces: 1 interface
+        0x01,               // bConfigurationValue: Configuration value
+        0x00,               // iConfiguration: Index of string descriptor describing the configuration
+        BMATTRIBUTES_MASK,  // bmAttributes - Bus powered
+        0x32,               // MaxPower 100 mA
+        
+// INTERFACE descriptor (Table 9-12 USB specification)
+        0x09,               //bLength
+        USB_IFACE_DESC_TYPE,//bDescriptorType: Interface
+        0x00,               //bInterfaceNumber
+        0x00,               //bAlternateSetting
+        0x01,               //bNumEndpoints
+        USB_CLASS_HID,      //bInterfaceClass
+        0x00,               //bInterfaceSubClass (0=not bootable or 1=bootable)
+        0x00,               //bInterfaceProtocol (if not bootable than always=0)
+        0x00,               //iInterface (no string Interface descriptor)
+        
+// HID descriptor (6.2.1 Device Class Definition for Human Interface Devices (HID) Version 1.11 )
+        0x09,               //bLength
+        USB_HID_DESC_TYPE,  //bDescriptorType: HID
+        0x0C,  0x01,        //bBCDHID low & high (ver 1.12)   
+        0x00,               //bCountryCode (not Localisation)
+        0x01,               //bNumDescriptors (follow 1 report descriptor)
+        USB_REPORT_DESC_TYPE,   //bDescriptorType (report)
+        0x3F,0x00,           //wDescriptorLength (report descriptor lenth)
+ 
+// ENDPOINT descriptor   (Table 9-13 USB specification) 
+        0x07,                       //bLength:
+        USB_EP_DESC_TYPE,           //bDescriptorType
+        IN_ENDPOINT | 0x01,         //bEndpointAddress(ep#1 direction=IN)
+        EP_TRANSFER_TYPE_INTERRUPT, // bmAttributes
+        0x01, 0x00,                 // wMaxPacketSize: 1 Byte max 
+        0x20                       // bInterval: Polling Interval (32 ms)           
+    };
+
+const struct
+{
+        uint8_t  bLength;
+        uint8_t  bDescriptorType;
+        wchar_t bString[(sizeof(L"Maximo technology"))];
+}wsVendor={1,2,L"Maximo technology"};
+
+
+//******************************************************************************
 void USB_Reset(void)
 {
     uint16_t Addr = sizeof(BDTable)>>1;
     for (uint8_t i = 0; i < EPCOUNT; i++) //active endpoints
 	{
         BDTable[i].TX_Address = Addr;
-        BDTable[i].TX_Count   = 0;
+        BDTable[i].TX_Count   =  0;
         Addr += EpData[i].TX_Max;
         BDTable[i].RX_Address = Addr;
         if (EpData[i].RX_Max >= 64)
@@ -77,6 +125,7 @@ void USB_Reset(void)
     USB->DADDR  = USB_DADDR_EF; //Enable USB device
 }
 
+//*****************************************************************************
 void USB_LP_CAN1_RX0_IRQHandler()
 {
     if (USB->ISTR & USB_ISTR_RESET) 
@@ -135,6 +184,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
     USB->ISTR = 0;
 }
 
+//*****************************************************************************
 void USB_EPHandler(uint16_t Status)
 {
     uint16_t DeviceConfigured = 0, DeviceStatus = 0;
@@ -227,6 +277,7 @@ void USB_EPHandler(uint16_t Status)
       }
 }
 
+//*****************************************************************************
 void USBLIB_GetDescriptor(USBLIB_SetupPacket *SPacket)
 {
     uint8_t c;
@@ -235,15 +286,15 @@ void USBLIB_GetDescriptor(USBLIB_SetupPacket *SPacket)
     switch (SPacket->wValue.H)
     {
     case USB_DEVICE_DESC_TYPE:
-        USBLIB_SendData(0, (uint16_t *)&USB_DEVICE_DESC, sizeof(USB_DEVICE_DESC));
+        USBLIB_SendData(0, (uint16_t *)&sDeviceDescriptor, sizeof(sDeviceDescriptor));
         break;
 
     case USB_CFG_DESC_TYPE:
-        //USBLIB_SendData(0, (uint16_t *)&USBD_CDC_CFG_DESCRIPTOR, sizeof(USBD_CDC_CFG_DESCRIPTOR));
+        USBLIB_SendData(0, (uint16_t *)&aConfDescriptor, sizeof(aConfDescriptor));
         break;
 
     case USB_STR_DESC_TYPE:
-       // pSTR = (USB_STR_DESCRIPTOR *)&wLANGID;
+        //pSTR = (USB_STR_DESCRIPTOR *)&wLANGID;
 
         for (c = 0; c < SetupPacket->wValue.L; c++) {
             pSTR = (USB_STR_DESCRIPTOR *)((uint8_t *)pSTR + pSTR->bLength);
@@ -256,6 +307,7 @@ void USBLIB_GetDescriptor(USBLIB_SetupPacket *SPacket)
     }
 }
 
+//*****************************************************************************
 void USBLIB_SendData(uint8_t EPn, uint16_t *Data, uint16_t Length)
 {
     EpData[EPn].lTX = Length;
@@ -267,6 +319,7 @@ void USBLIB_SendData(uint8_t EPn, uint16_t *Data, uint16_t Length)
     USBLIB_setStatTx(EPn, TX_VALID);
 }
 
+//*****************************************************************************
 //This routine moving data from PMA USB buffer to user buffer
 void USBLIB_Pma2EPBuf(uint8_t EPn)
 {
@@ -282,38 +335,44 @@ void USBLIB_Pma2EPBuf(uint8_t EPn)
     }
 }
 
+//*****************************************************************************
 //This routine moving data from user buffer to PMA USB buffer
 void USBLIB_EPBuf2Pma(uint8_t EPn)
 {
     uint32_t *Distination;
     uint8_t   Count;
-
     Count  = EpData[EPn].lTX <= EpData[EPn].TX_Max ? EpData[EPn].lTX : EpData[EPn].TX_Max;
     BDTable[EPn].TX_Count = Count;
     Distination = (uint32_t *)(USB_PMAADDR + BDTable[EPn].TX_Address * 2);
     writeDebug('T', 'x', EpData[EPn].lTX,0); // will transmit xxx bytes
+    
     for (uint8_t i = 0; i < (Count + 1) / 2; i++) 
     {
         *(uint32_t *)Distination = *(uint16_t *)EpData[EPn].pTX_BUFF;
         Distination++;
         EpData[EPn].pTX_BUFF++;
     }
-    EpData[EPn].lTX -= Count; //why ???? 
+    EpData[EPn].lTX -= Count;
 }
 
-//This routine togled EP_STAT_TX bits. Pay attention this bits for can't been directly writen, but only togle
+/* ****************************************************************************
+This routine togled EP_STAT_TX bits. 
+Pay attention this bits for can't been directly writen, but only togle */
 void USBLIB_setStatTx(uint8_t EPn, uint16_t Stat)
 {
     register uint16_t val = USB->EPR[EPn];
     USB->EPR[EPn] = (val ^ (Stat & EP_STAT_TX)) & (EP_MASK | EP_STAT_TX);
 }
 
+//*****************************************************************************
 void USBLIB_setStatRx(uint8_t EPn, uint16_t Stat)
 {
     register uint16_t val = USB->EPR[EPn];
     USB->EPR[EPn]         = (val ^ (Stat & EP_STAT_RX)) & (EP_MASK | EP_STAT_RX);
 }
 
+//*****************************************************************************
+//Debugging real-time
 void writeDebug(char com1, char com2,uint16_t reg16, uint32_t reg32)
 {
   static uint16_t limit=0;

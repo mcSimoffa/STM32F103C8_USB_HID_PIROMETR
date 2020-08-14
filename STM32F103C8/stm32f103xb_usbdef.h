@@ -45,8 +45,9 @@ typedef struct
     uint16_t *pRX_BUFF;     // RX Buffer pointer
     uint32_t  lRX;          // RX Data length
 } USB_EPinfo;
-#define BDT_COUNTn_RX_Msk 0x3FF     //RM0008 site 650
 
+
+#define BDT_COUNTn_RX_Msk 0x3FF     //RM0008 site 650
 #define  USB_COUNT_RX_NUM_BLOCK_Pos 10
 #define  USB_COUNT_RX_BLSIZE_Pos    15
 #define  USB_COUNT_RX_BLSIZE        (1<<USB_COUNT_RX_BLSIZE_Pos)
@@ -136,31 +137,43 @@ typedef struct
 #define USB_REQUEST_SYNC_FRAME 12
 
 // USB Descriptor Types (Table 9-5 USB 2.0 specification)
-#define USB_DEVICE_DESC_TYPE 1
-#define USB_CFG_DESC_TYPE 2
-#define USB_STR_DESC_TYPE 3
-#define USB_IFACE_DESC_TYPE 4
-#define USB_EP_DESC_TYPE 5
-#define USB_DEVICE_QR_DESC_TYPE 6
-#define USB_OSPEED_CFG_DESC_TYPE 7
-#define USB_IFACE_PWR_DESC_TYPE 8
-
-/* USB Device Classes */
-#define USB_RESERVED 0x00
-#define USB_AUDIO 0x01
-#define USB_COMM 0x02
-#define USB_HID 0x03
-#define USB_MONITOR 0x04
-#define USB_PHYSIC 0x05
-#define USB_POWER 0x06
-#define USB_PRINTER 0x07
-#define USB_STORAGE 0x08
-#define USB_HUB 0x09
-#define USB_VENDOR_SPEC 0xFF
+#define USB_DEVICE_DESC_TYPE        1
+#define USB_CFG_DESC_TYPE           2
+#define USB_STR_DESC_TYPE           3
+#define USB_IFACE_DESC_TYPE         4
+#define USB_EP_DESC_TYPE            5
+#define USB_DEVICE_QR_DESC_TYPE     6
+#define USB_OSPEED_CFG_DESC_TYPE    7
+#define USB_IFACE_PWR_DESC_TYPE     8
+// (chapter 7.1.1 site 49 hid1_11 specification)
+#define USB_HID_DESC_TYPE           0x21
+#define USB_REPORT_DESC_TYPE        0x22
+#define USB_PHYSICAL_DESC_TYPE      0x23
 
 
-#define DEVICE_VENDOR_ID 0x25AE
-#define DEVICE_PRODUCT_ID 0x24AB
+// USB Device Classes (https://www.usb.org/defined-class-codes)
+#define USB_CLASS_IN_INTERFACE_DESCRIPTOR   0x00
+#define USB_CLASS_AUDIO                     0x01
+#define USB_CLASS_COMM                      0x02
+#define USB_CLASS_HID                       0x03
+#define USB_CLASS_PHYSICAL                  0x05
+#define USB_CLASS_IMAGE                     0x06
+#define USB_CLASS_PRINTER                   0x07
+#define USB_CLASS_MASS_STORAGE              0x08
+#define USB_CLASS_HUB                       0x09
+#define USB_CLASS_CDC_DATA                  0x0A
+#define USB_CLASS_STMART_CARD               0x0B
+#define USB_CLASS_CONTENT_SECURITY          0x0D
+#define USB_CLASS_VIDEO                     0x0E
+#define USB_CLASS_PERSONAL HEALTHCARE		0x0F
+#define USB_CLASS_AUDIO_VIDEO_DEVICES		0x10
+#define USB_CLASS_BILLBOARD_DEVICE			0x11
+#define USB_CLASS_USB_TYPE_C_BRIDGE			0x12
+#define USB_CLASS_DIAGNOSTIC_DEVICE			0xDC
+#define USB_CLASS_WIRELESS_CONTROLLER		0xE0
+#define USB_CLASS_MISCELLANEOUS				0xEF
+#define USB_CLASS_APPLICATION_SPECIFIC		0xFE
+#define USB_CLASS_VENDOR_SPECIFIC			0xFF
 
 // USB Descriptor Types (Table 9-5 USB 2.0 specification)
 #define USB_DEVICE_DESC_TYPE 1
@@ -172,10 +185,51 @@ typedef struct
 #define USB_OSPEED_CFG_DESC_TYPE 7
 #define USB_IFACE_PWR_DESC_TYPE 8
 
+typedef struct // Table 9-8 USB specification
+{
+    uint8_t  bLength;
+    uint8_t  bDescriptorType;
+    uint8_t  bcdUSB_L;
+    uint8_t  bcdUSB_H;
+    uint8_t  bDeviceClass;
+    uint8_t  bDeviceSubClass;
+    uint8_t  bDeviceProtocol;
+    uint8_t  bMaxPacketSize0;
+    uint8_t  idVendor_L;
+    uint8_t  idVendor_H;
+    uint8_t  idProduct_L;
+    uint8_t  idProduct_H;
+    uint8_t  bcdDevice_L;
+    uint8_t  bcdDevice_H;
+    uint8_t  iManufacturer;
+    uint8_t  iProduct;
+    uint8_t  iSerialNumber;
+    uint8_t  bNumConfigurations;
+} Typedef_USB_DEVICE_DESCRIPTOR;
+
+//configuration configuration descriptor field 'bmAttributes'  (Table 9-10 USB specification offset = 7)
+#define BMATTRIBUTES_MASK           0x80
+#define BMATTRIBUTES_SELF_POWERED   0x40
+#define BMATTRIBUTES_REMOTE_WAKEUP  0x20
+
+//configuration endpoint descriptor field 'bEndpointAddress' (Table 9-13 USB specification offset = 2)
+#define IN_ENDPOINT                 0x80
+#define OUT_ENDPOINT                0x00
+
+//configuration endpoint descriptor field 'bmAttributes' (Table 9-13 USB specification offset = 3)
+#define EP_TRANSFER_TYPE_CONTROL                  0x00
+#define EP_TRANSFER_TYPE_ISOCHRONOUS              0x01
+#define EP_TRANSFER_TYPE_BULK                     0x02
+#define EP_TRANSFER_TYPE_INTERRUPT                0x03
+
 typedef struct _USB_STRING_DESCRIPTOR_ 
 {
     uint8_t bLength;
     uint8_t bDescriptorType;
 } USB_STR_DESCRIPTOR;
+
+
+#define DEVICE_VENDOR_ID 0x25AE
+#define DEVICE_PRODUCT_ID 0x24AB
 
 #endif //__STM32F103xb_USBDEF_H
