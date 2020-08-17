@@ -99,14 +99,7 @@ typedef struct
 #define ISTR_DIR    (0x0010)  /* DIRection of transaction (read-only bit)  */
 #define ISTR_EP_ID  (0x000F)  /* EndPoint IDentifier (read-only bit)  */
 //--------------------------
-typedef struct
-{
-    uint8_t Recipient : 5;
-    uint8_t Type : 2;
-    uint8_t Dir : 1;
-} USBLIB_RequestType;
-
-typedef struct
+typedef struct //(Table 9-2 USB 2.0 specification. site 248)
 {
     uint8_t L : 8;
     uint8_t H : 8;
@@ -114,11 +107,11 @@ typedef struct
 //standatr setup packet structure. (str 29 book)
 typedef struct
 {
-    USBLIB_RequestType bmRequestType;
-    uint8_t            bRequest;
-    USBLIB_WByte       wValue;
-    USBLIB_WByte       wIndex;
-    uint8_t            wLength;
+    uint8_t         bmRequestType;
+    uint8_t         bRequest;
+    USBLIB_WByte    wValue;
+    USBLIB_WByte    wIndex;
+    uint8_t         wLength;
 } USBLIB_SetupPacket;
 //---------------------------
 
@@ -175,16 +168,6 @@ typedef struct
 #define USB_CLASS_APPLICATION_SPECIFIC		0xFE
 #define USB_CLASS_VENDOR_SPECIFIC			0xFF
 
-// USB Descriptor Types (Table 9-5 USB 2.0 specification)
-#define USB_DEVICE_DESC_TYPE 1
-#define USB_CFG_DESC_TYPE 2
-#define USB_STR_DESC_TYPE 3
-#define USB_IFACE_DESC_TYPE 4
-#define USB_EP_DESC_TYPE 5
-#define USB_DEVICE_QR_DESC_TYPE 6
-#define USB_OSPEED_CFG_DESC_TYPE 7
-#define USB_IFACE_PWR_DESC_TYPE 8
-
 typedef struct // Table 9-8 USB specification
 {
     uint8_t  bLength;
@@ -207,6 +190,26 @@ typedef struct // Table 9-8 USB specification
     uint8_t  bNumConfigurations;
 } Typedef_USB_DEVICE_DESCRIPTOR;
 
+/*typedef struct // Table 9-9 USB specification
+{
+    uint8_t  bLength;
+    uint8_t  bDescriptorType;
+    uint8_t  bcdUSB_L;
+    uint8_t  bcdUSB_H;
+    uint8_t  bDeviceClass;
+    uint8_t  bDeviceSubClass;
+    uint8_t  bDeviceProtocol;
+    uint8_t  bMaxPacketSize0;
+    uint8_t  bNumConfigurations;
+    uint8_t  bReservedFuture;
+} Typedef_USB_DEVICE_QUALIFIER_DESCRIPTOR;*/
+
+typedef struct
+{
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+} USB_STR_DESCRIPTOR;
+
 //configuration configuration descriptor field 'bmAttributes'  (Table 9-10 USB specification offset = 7)
 #define BMATTRIBUTES_MASK           0x80
 #define BMATTRIBUTES_SELF_POWERED   0x40
@@ -221,13 +224,6 @@ typedef struct // Table 9-8 USB specification
 #define EP_TRANSFER_TYPE_ISOCHRONOUS              0x01
 #define EP_TRANSFER_TYPE_BULK                     0x02
 #define EP_TRANSFER_TYPE_INTERRUPT                0x03
-
-typedef struct _USB_STRING_DESCRIPTOR_ 
-{
-    uint8_t bLength;
-    uint8_t bDescriptorType;
-} USB_STR_DESCRIPTOR;
-
 
 #define DEVICE_VENDOR_ID 0x25AE
 #define DEVICE_PRODUCT_ID 0x24AB

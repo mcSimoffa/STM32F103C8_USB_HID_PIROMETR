@@ -62,6 +62,8 @@
             <file>$PROJ_DIR$\STM32F103C8\stm32f103xb.h</file>
             <file>$PROJ_DIR$\STM32F103C8\stm32f10x.h</file>
             <file>$TOOLKIT_DIR$\lib\shb_l.a</file>
+            <file>$PROJ_DIR$\Inc\HidSensorSpec.h</file>
+            <file>$PROJ_DIR$\Inc\usb_hidreport.h</file>
         </outputs>
         <file>
             <name>[ROOT_NODE]</name>
@@ -156,7 +158,7 @@
             <inputs>
                 <tool>
                     <name>ICCARM</name>
-                    <file> 9 55 15 43 2 14 37 52 46 25 47 51 41 32 19 33 38 31 45</file>
+                    <file> 9 55 15 43 2 14 37 52 46 25 47 51 41 32 19 57 33 38 31 45</file>
                 </tool>
             </inputs>
         </file>

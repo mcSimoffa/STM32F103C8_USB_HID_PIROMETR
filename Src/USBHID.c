@@ -1,4 +1,5 @@
 #include "USBHID.h"
+#include "HidSensorSpec.h"
 #include <stdlib.h>
 #include "Systick.h"
 #define EPCOUNT 2
@@ -7,15 +8,16 @@ __no_init volatile USB_BDT BDTable[EPCOUNT] @ USB_PMAADDR ; //Buffer Description
 
 typedef struct
 {
-  uint32_t tick_;
-  char com_1;
-  char com_2;
-  uint16_t reg_16;
-  uint32_t reg_32;
+  uint32_t 	tick_;
+  uint8_t 	bmRequest;
+  uint8_t 	bRequest;
+  uint8_t	bValueH;
+  uint8_t	bValueL;
+  uint16_t	wLength;
+  char 		str[2];
 } Typedef_debug ;
-
 Typedef_debug debug[100];
-void writeDebug(char com1, char com2,uint16_t reg16, uint32_t reg32);
+void logging(USBLIB_SetupPacket * pIncomingPacket, char Str[2]);
 
 USB_EPinfo EpData[EPCOUNT] =
 {
@@ -24,6 +26,18 @@ USB_EPinfo EpData[EPCOUNT] =
 };
 USBLIB_SetupPacket   *SetupPacket;
 volatile uint8_t      DeviceAddress = 0;
+
+/*const Typedef_USB_DEVICE_QUALIFIER_DESCRIPTOR sQualDescriptor={
+.bLength = 10, 
+.bDescriptorType = USB_DEVICE_QR_DESC_TYPE,
+.bcdUSB_L = 0,
+.bcdUSB_H = 2,
+.bDeviceClass = USB_CLASS_IN_INTERFACE_DESCRIPTOR,
+.bDeviceSubClass = 0,
+.bDeviceProtocol = 0,
+.bMaxPacketSize0 = 8,
+.bNumConfigurations =0,
+.bReservedFuture=0};*/
 
 const Typedef_USB_DEVICE_DESCRIPTOR sDeviceDescriptor={
 .bLength = 18, 
@@ -42,7 +56,7 @@ const Typedef_USB_DEVICE_DESCRIPTOR sDeviceDescriptor={
 .bcdDevice_H = 1,
 .iManufacturer = 1,
 .iProduct = 2,
-.iSerialNumber = 3,
+.iSerialNumber = 0,
 .bNumConfigurations =1};
 
 const uint8_t aConfDescriptor[] = 
@@ -71,28 +85,135 @@ const uint8_t aConfDescriptor[] =
 // HID descriptor (6.2.1 Device Class Definition for Human Interface Devices (HID) Version 1.11 )
         0x09,               //bLength
         USB_HID_DESC_TYPE,  //bDescriptorType: HID
-        0x0C,  0x01,        //bBCDHID low & high (ver 1.12)   
+        0x11,  0x01,        //bBCDHID low & high (ver 1.12)   
         0x00,               //bCountryCode (not Localisation)
         0x01,               //bNumDescriptors (follow 1 report descriptor)
         USB_REPORT_DESC_TYPE,   //bDescriptorType (report)
-        0x3F,0x00,           //wDescriptorLength (report descriptor lenth)
+        184,0x00,           //wDescriptorLength (report descriptor lenth)
  
 // ENDPOINT descriptor   (Table 9-13 USB specification) 
         0x07,                       //bLength:
         USB_EP_DESC_TYPE,           //bDescriptorType
         IN_ENDPOINT | 0x01,         //bEndpointAddress(ep#1 direction=IN)
         EP_TRANSFER_TYPE_INTERRUPT, // bmAttributes
-        0x01, 0x00,                 // wMaxPacketSize: 1 Byte max 
-        0x20                       // bInterval: Polling Interval (32 ms)           
+        0x08, 0x00,                 // wMaxPacketSize: 8 Byte max 
+        0x20                        // bInterval: Polling Interval (32 ms)           
     };
 
-const struct
+const uint8_t aStringDescriptors0[]=
 {
-        uint8_t  bLength;
-        uint8_t  bDescriptorType;
-        wchar_t bString[(sizeof(L"Maximo technology"))];
-}wsVendor={1,2,L"Maximo technology"};
+    0x04,               // bLength
+    (uint8_t)USB_STR_DESC_TYPE,  //bDescriptorType
+    0x09,0x00               //LANG_ID English
+};
+const uint8_t aStringDescriptors1[]=
+{
+    36,                 // bLength
+    USB_STR_DESC_TYPE,  //bDescriptorType
+    'M',0, 'a',0, 'x',0, 'i',0, 'm',0, 'o',0, ' ',0, 'T',0, 'e',0, 'c',0, 'h',0, 'n',0, 'o',0, 'l',0, 'o',0, 'g',0, 'y',0   //Manufactured
+};
 
+const uint8_t aStringDescriptors2[]=
+{
+    20,                 // bLength
+    USB_STR_DESC_TYPE,  //bDescriptorType
+    'P',0, 'i',0, 'r',0, 'o',0, 'm',0, 'e',0, 't',0, 'e',0, 'r',0, //Product
+};
+
+uint8_t* StringDescriptors[3]=
+{
+  (uint8_t*) &aStringDescriptors0,
+  (uint8_t*) &aStringDescriptors1,
+  (uint8_t*) &aStringDescriptors2
+};
+
+static const uint8_t HID_Sensor_ReportDesc[184] =
+{
+  HID_USAGE_PAGE_SENSOR,
+  HID_USAGE_SENSOR_TYPE_ENVIRONMENTAL_TEMPERATURE,
+  HID_COLLECTION(Physical),
+
+  //feature reports (xmit/receive)
+  HID_USAGE_PAGE_SENSOR,
+
+  HID_USAGE_SENSOR_PROPERTY_REPORT_INTERVAL,
+  HID_LOGICAL_MIN_8(0),
+  HID_LOGICAL_MAX_32(0xFF,0xFF,0xFF,0xFF),
+  HID_REPORT_SIZE(32),
+  HID_REPORT_COUNT(1),
+  HID_UNIT_EXPONENT(0),
+  HID_FEATURE(Data_Var_Abs),
+
+  HID_USAGE_SENSOR_DATA(HID_USAGE_SENSOR_DATA_ENVIRONMENTAL_TEMPERATURE,HID_USAGE_SENSOR_DATA_MOD_MAX),
+  HID_LOGICAL_MIN_16(0x01,0x80), // LOGICAL_MINIMUM (-32767)
+  HID_LOGICAL_MAX_16(0xFF,0x7F), // LOGICAL_MAXIMUM (32767)
+  HID_REPORT_SIZE(16),
+  HID_REPORT_COUNT(1),
+  HID_UNIT_EXPONENT(0x0E), // scale default unit “Celsius” to provide 2 digits past the decimal point
+  HID_FEATURE(Data_Var_Abs),
+
+  HID_USAGE_SENSOR_DATA(HID_USAGE_SENSOR_DATA_ENVIRONMENTAL_TEMPERATURE,HID_USAGE_SENSOR_DATA_MOD_MIN),
+  HID_LOGICAL_MIN_16(0x01,0x80), // LOGICAL_MINIMUM (-32767)
+  HID_LOGICAL_MAX_16(0xFF,0x7F), // LOGICAL_MAXIMUM (32767)
+  HID_REPORT_SIZE(16),
+  HID_REPORT_COUNT(1),
+  HID_UNIT_EXPONENT(0x0E), // scale default unit “Celsius” to provide 2 digits past the decimal point
+  HID_FEATURE(Data_Var_Abs),
+
+  //input reports (transmit)
+  HID_USAGE_PAGE_SENSOR,
+
+  HID_USAGE_SENSOR_STATE,
+  HID_LOGICAL_MIN_8(0),
+  HID_LOGICAL_MAX_8(6),
+  HID_REPORT_SIZE(8),
+  HID_REPORT_COUNT(1),
+  HID_COLLECTION(Logical),
+  HID_USAGE_SENSOR_STATE_UNKNOWN,
+  HID_USAGE_SENSOR_STATE_READY,
+  HID_USAGE_SENSOR_STATE_NOT_AVAILABLE,
+  HID_USAGE_SENSOR_STATE_NO_DATA,
+  HID_USAGE_SENSOR_STATE_INITIALIZING,
+  HID_USAGE_SENSOR_STATE_ACCESS_DENIED,
+  HID_USAGE_SENSOR_STATE_ERROR,
+  HID_INPUT(Data_Arr_Abs),
+  HID_END_COLLECTION,
+
+  HID_USAGE_SENSOR_EVENT,
+  HID_LOGICAL_MIN_8(0),
+  HID_LOGICAL_MAX_8(16),
+  HID_REPORT_SIZE(8),
+  HID_REPORT_COUNT(1),
+  HID_COLLECTION(Logical),
+  HID_USAGE_SENSOR_EVENT_UNKNOWN,
+  HID_USAGE_SENSOR_EVENT_STATE_CHANGED,
+  HID_USAGE_SENSOR_EVENT_PROPERTY_CHANGED,
+  HID_USAGE_SENSOR_EVENT_DATA_UPDATED,
+  HID_USAGE_SENSOR_EVENT_POLL_RESPONSE,
+  HID_USAGE_SENSOR_EVENT_CHANGE_SENSITIVITY,
+  HID_USAGE_SENSOR_EVENT_MAX_REACHED,
+  HID_USAGE_SENSOR_EVENT_MIN_REACHED,
+  HID_USAGE_SENSOR_EVENT_HIGH_THRESHOLD_CROSS_UPWARD,
+  HID_USAGE_SENSOR_EVENT_HIGH_THRESHOLD_CROSS_DOWNWARD,
+  HID_USAGE_SENSOR_EVENT_LOW_THRESHOLD_CROSS_UPWARD,
+  HID_USAGE_SENSOR_EVENT_LOW_THRESHOLD_CROSS_DOWNWARD,
+  HID_USAGE_SENSOR_EVENT_ZERO_THRESHOLD_CROSS_UPWARD,
+  HID_USAGE_SENSOR_EVENT_ZERO_THRESHOLD_CROSS_DOWNWARD,
+  HID_USAGE_SENSOR_EVENT_PERIOD_EXCEEDED,
+  HID_USAGE_SENSOR_EVENT_FREQUENCY_EXCEEDED,
+  HID_USAGE_SENSOR_EVENT_COMPLEX_TRIGGER,
+  HID_INPUT(Data_Arr_Abs),
+  HID_END_COLLECTION,
+
+  HID_USAGE_SENSOR_DATA_ENVIRONMENTAL_TEMPERATURE,
+  HID_LOGICAL_MIN_16(0x01,0x80), // LOGICAL_MINIMUM (-32767)
+  HID_LOGICAL_MAX_16(0xFF,0x7F), // LOGICAL_MAXIMUM (32767)
+  HID_REPORT_SIZE(16),
+  HID_REPORT_COUNT(1),
+  HID_UNIT_EXPONENT(0x0E), // scale default unit “Celsius” to provide 2 digits past the decimal point
+  HID_INPUT(Data_Var_Abs),
+  HID_END_COLLECTION
+}; 
 
 //******************************************************************************
 void USB_Reset(void)
@@ -119,7 +240,7 @@ void USB_Reset(void)
     for (uint8_t i = EPCOUNT; i < 8; i++) //inactive endpoints
         USB->EPR[i] = i | RX_NAK | TX_NAK;
 
-    USB->CNTR   = USB_CNTR_CTRM | USB_CNTR_RESETM | USB_CNTR_SUSPM;
+    USB->CNTR   = USB_CNTR_CTRM | USB_CNTR_RESETM | USB_CNTR_SUSPM | USB_CNTR_ERRM;
     USB->ISTR   = 0x00;
     USB->BTABLE = 0x00;
     USB->DADDR  = USB_DADDR_EF; //Enable USB device
@@ -130,7 +251,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
 {
     if (USB->ISTR & USB_ISTR_RESET) 
     { // Reset
-        writeDebug('R', 'e', USB->ISTR,0);
+        logging(NULL, "RE");
         USB->ISTR &= ~USB_ISTR_RESET;
         USB_Reset();
         return;
@@ -160,7 +281,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
     if (USB->ISTR & USB_ISTR_ERR) 
     {
         USB->ISTR &= ~USB_ISTR_ERR;
-        // Handle Error
+        logging(NULL, "ER");
         return;
     }
     if (USB->ISTR & USB_ISTR_WKUP) 
@@ -201,54 +322,50 @@ void USB_EPHandler(uint16_t Status)
                 switch (SetupPacket->bRequest) 
                 {
                 case USB_REQUEST_GET_DESCRIPTOR:
+                    logging(SetupPacket,"GD");
                     USBLIB_GetDescriptor(SetupPacket);
                     break;
                     
                 case USB_REQUEST_SET_ADDRESS:
-                    writeDebug('S', 'a', SetupPacket->wValue.L,0);
+                    logging(SetupPacket,"SA");
                     USBLIB_SendData(0, 0, 0);
                     DeviceAddress = SetupPacket->wValue.L;
                     break;
 
                 case USB_REQUEST_GET_STATUS:
-                    writeDebug('G', 's', 0,0);
-                    //USBLIB_SendData(0, &DeviceStatus, 2);
+                    logging(SetupPacket,"GS");
+                    USBLIB_SendData(0, &DeviceStatus, 2);
                     break;
 
                 case USB_REQUEST_GET_CONFIGURATION:
-                    writeDebug('G', 'c', 0,0);
+                    logging(SetupPacket,"GC");
                     //USBLIB_SendData(0, &DeviceConfigured, 1);
                     break;
 
                 case USB_REQUEST_SET_CONFIGURATION:
-                    writeDebug('S', 'c', 0,0);
+                    logging(SetupPacket,"SC");
                     DeviceConfigured = 1;
                     USBLIB_SendData(0, 0, 0);
                     break;
-
-                /*case USB_DEVICE_CDC_REQUEST_SET_COMM_FEATURE:
-                    //TODO
-                    break;
-
-                case USB_DEVICE_CDC_REQUEST_SET_LINE_CODING:        //0x20
-                    USBLIB_SendData(0, 0, 0);
-                    break;
-
-                case USB_DEVICE_CDC_REQUEST_GET_LINE_CODING:        //0x21
-                    //SBLIB_SendData(EPn, (uint16_t *)&lineCoding, sizeof(lineCoding));
-                    break;
-
-                case USB_DEVICE_CDC_REQUEST_SET_CONTROL_LINE_STATE:         //0x22
-                    LineState = SetupPacket->wValue;
-                    USBLIB_SendData(0, 0, 0);
-                    //uUSBLIB_LineStateHandler(SetupPacket->wValue);
-                    break;*/
+                    
+                case USB_REQUEST_GET_INTERFACE:
+                  logging(SetupPacket,"GI");
+                  USBLIB_SendData(0, 0, 0);
+                  break;
+             
+               case USB_REQUEST_CLEAR_FEATURE:
+                  logging(SetupPacket,"CF");
+                  USBLIB_SendData(0, 0, 0);
+                  break;
+                  
+                default:
+                  logging(SetupPacket,"??");
                 }
             }
         } 
         else 
         { // Got data from another EP
-            // Call user function
+          asm("nop");  // Call user function
          //   uUSBLIB_DataReceivedHandler(EpData[EPn].pRX_BUFF, EpData[EPn].lRX);
         }
         
@@ -278,29 +395,43 @@ void USB_EPHandler(uint16_t Status)
 }
 
 //*****************************************************************************
+//see chapter 9.4.3 USB 2.0 specification
 void USBLIB_GetDescriptor(USBLIB_SetupPacket *SPacket)
 {
-    uint8_t c;
     USB_STR_DESCRIPTOR *pSTR;
-    writeDebug('G', 'd', SPacket->wValue.H,0);
+    uint16_t descSize;
     switch (SPacket->wValue.H)
     {
     case USB_DEVICE_DESC_TYPE:
-        USBLIB_SendData(0, (uint16_t *)&sDeviceDescriptor, sizeof(sDeviceDescriptor));
+        descSize=(sizeof(sDeviceDescriptor)< SPacket->wLength)? sizeof(sDeviceDescriptor) : SPacket->wLength;
+        USBLIB_SendData(0, (uint16_t *)&sDeviceDescriptor, descSize);
         break;
 
     case USB_CFG_DESC_TYPE:
-        USBLIB_SendData(0, (uint16_t *)&aConfDescriptor, sizeof(aConfDescriptor));
+      //use only one configuration, but wValue.L is ignored
+        descSize=(sizeof(aConfDescriptor)< SPacket->wLength)? sizeof(aConfDescriptor) : SPacket->wLength;
+        USBLIB_SendData(0, (uint16_t *)&aConfDescriptor, descSize);
         break;
 
     case USB_STR_DESC_TYPE:
-        //pSTR = (USB_STR_DESCRIPTOR *)&wLANGID;
-
-        for (c = 0; c < SetupPacket->wValue.L; c++) {
-            pSTR = (USB_STR_DESCRIPTOR *)((uint8_t *)pSTR + pSTR->bLength);
-        }
-        USBLIB_SendData(0, (uint16_t *)pSTR, pSTR->bLength);
+        pSTR = (USB_STR_DESCRIPTOR *)StringDescriptors[SetupPacket->wValue.L];
+        descSize=(pSTR->bLength < SPacket->wLength)? pSTR->bLength : SPacket->wLength;
+        USBLIB_SendData(0, (uint16_t *)pSTR, descSize);
         break;
+        
+    case USB_DEVICE_QR_DESC_TYPE:
+        /*descSize=(sizeof(sQualDescriptor)< SPacket->wLength)? sizeof(sQualDescriptor) : SPacket->wLength;
+        USBLIB_SendData(0, (uint16_t *)&sQualDescriptor, descSize);
+        break;*/
+        BDTable[0].TX_Count = 0;
+        USBLIB_setStatTx(0, TX_STALL);
+        break;
+       
+    case USB_REPORT_DESC_TYPE:
+        descSize=(sizeof(HID_Sensor_ReportDesc)< SPacket->wLength)? sizeof(HID_Sensor_ReportDesc) : SPacket->wLength;
+        USBLIB_SendData(0, (uint16_t *)&HID_Sensor_ReportDesc, descSize);
+        break;    
+        
     default:
         USBLIB_SendData(0, 0, 0);
         break;
@@ -344,7 +475,7 @@ void USBLIB_EPBuf2Pma(uint8_t EPn)
     Count  = EpData[EPn].lTX <= EpData[EPn].TX_Max ? EpData[EPn].lTX : EpData[EPn].TX_Max;
     BDTable[EPn].TX_Count = Count;
     Distination = (uint32_t *)(USB_PMAADDR + BDTable[EPn].TX_Address * 2);
-    writeDebug('T', 'x', EpData[EPn].lTX,0); // will transmit xxx bytes
+    //writeDebug('T', 'x', EpData[EPn].lTX,(uint32_t)EpData[EPn].pTX_BUFF); // will transmit xxx bytes
     
     for (uint8_t i = 0; i < (Count + 1) / 2; i++) 
     {
@@ -373,18 +504,21 @@ void USBLIB_setStatRx(uint8_t EPn, uint16_t Stat)
 
 //*****************************************************************************
 //Debugging real-time
-void writeDebug(char com1, char com2,uint16_t reg16, uint32_t reg32)
+void logging(USBLIB_SetupPacket * pIncomingPacket, char Str[2])
 {
   static uint16_t limit=0;
   if (limit<100)
   {
     debug[limit].tick_=GetTick();
-    debug[limit].com_1=com1;
-    debug[limit].com_2=com2;
-    debug[limit].reg_16= reg16;
-    debug[limit].reg_32= reg32;
+	debug[limit].bmRequest =pIncomingPacket->bmRequestType;
+    debug[limit].bRequest =	pIncomingPacket->bRequest;
+    debug[limit].bValueH = pIncomingPacket->wValue.H;
+    debug[limit].bValueL = pIncomingPacket->wValue.L;
+	debug[limit].wLength = 	pIncomingPacket->wLength;
+	debug[limit].str[0]=Str[0];
+	debug[limit].str[1]=Str[1];
     limit++;
-  } 
+  }  
   else
     while(1)
       asm("nop");

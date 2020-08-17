@@ -52,8 +52,8 @@ void main()
   USB->CNTR &= ~USB_CNTR_FRES; //disable Force Reset
   NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
   NVIC_EnableIRQ(USBWakeUp_IRQn);
-  msDelay(500);
-  GPIO_SET(GPIOA,1<<USB_ENABLE); //Disable USB pullup resistor 1k5
+  //msDelay(50000);
+  //GPIO_SET(GPIOA,1<<USB_ENABLE); //Disable USB pullup resistor 1k5
   while (1)
   {
   }
