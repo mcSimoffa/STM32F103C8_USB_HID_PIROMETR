@@ -2377,6 +2377,9 @@
     <group>
         <name>Src</name>
         <file>
+            <name>$PROJ_DIR$\Src\additional_func.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\Src\cll_stm32F10x_gpio.c</name>
         </file>
         <file>

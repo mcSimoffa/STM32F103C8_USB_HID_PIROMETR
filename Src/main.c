@@ -2,6 +2,8 @@
 #include "stm32f103xb_usbdef.h"
 #include "cll_stm32F10x_gpio.h"
 #include "Systick.h"
+#include "additional_func.h"
+
 #define SYSTICK_DIVIDER 48000
 //GPIO A
 #define USB_ENABLE 7
@@ -35,6 +37,13 @@ void main()
   CLL_GPIO_SetPinMode(GPIOC,GPIO_descript,1);   //GPIO C init
   GPIO_SET(GPIOC,1<<ONBOARD_LED); //off LED 
   
+   //SWO debug ON
+  DBGMCU->CR &= ~(DBGMCU_CR_TRACE_MODE_0 | DBGMCU_CR_TRACE_MODE_0);
+  DBGMCU->CR |= DBGMCU_CR_TRACE_IOEN;
+  
+  // JTAG-DP Disabled and SW-DP Enabled
+  AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_1;
+    
   //1ms SysTick interval.
   while (SysTick_Config(SYSTICK_DIVIDER)==1)	
     asm("nop");	 //reason - bad divider 

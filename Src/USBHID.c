@@ -104,7 +104,7 @@ const uint8_t aStringDescriptors0[]=
 {
     0x04,               // bLength
     (uint8_t)USB_STR_DESC_TYPE,  //bDescriptorType
-    0x09,0x00               //LANG_ID English
+    0x09,0x04               //LANG_ID English
 };
 const uint8_t aStringDescriptors1[]=
 {
@@ -348,7 +348,7 @@ void USB_EPHandler(uint16_t Status)
                     USBLIB_SendData(0, 0, 0);
                     break;
                     
-                case USB_REQUEST_GET_INTERFACE:
+                case USB_REQUEST_GET_INTERFACE: //this is wrong!!  SET_IDLE
                   logging(SetupPacket,"GI");
                   USBLIB_SendData(0, 0, 0);
                   break;
