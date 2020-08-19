@@ -11,4 +11,7 @@
  void USBLIB_EPBuf2Pma(uint8_t EPn);
  void USBLIB_setStatTx(uint8_t EPn, uint16_t Stat);
  void USBLIB_setStatRx(uint8_t EPn, uint16_t Stat);
+ 
+ void loggingSetupPacket(USBLIB_SetupPacket *pSetup);
+ void loggingEvent(char *eventdesc, uint32_t reg);
 #endif //_USBHID_H_

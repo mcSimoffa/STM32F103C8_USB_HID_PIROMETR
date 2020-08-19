@@ -111,7 +111,7 @@ typedef struct
     uint8_t         bRequest;
     USBLIB_WByte    wValue;
     USBLIB_WByte    wIndex;
-    uint8_t         wLength;
+    uint16_t         wLength;
 } USBLIB_SetupPacket;
 //---------------------------
 #define USB_REQUEST_TYPE            0x60 // bits 5&6 Table 9-2 USB 2.0 specification)

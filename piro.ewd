@@ -84,7 +84,11 @@
                 </option>
                 <option>
                     <name>OCDynDriverList</name>
+<<<<<<< HEAD
                     <state>ARMSIM_ID</state>
+=======
+                    <state>JLINK_ID</state>
+>>>>>>> 4bf409a8ac652b6a4df8f8477a01d72bd7e93608
                 </option>
                 <option>
                     <name>OCLastSavedByProductVersion</name>
@@ -830,12 +834,12 @@
                 </option>
                 <option>
                     <name>CCJLinkInterfaceRadio</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>CCJLinkResetList</name>
                     <version>6</version>
-                    <state>5</state>
+                    <state>7</state>
                 </option>
                 <option>
                     <name>CCJLinkInterfaceCmdLine</name>
@@ -900,11 +904,11 @@
                 </option>
                 <option>
                     <name>CCCpuClockEdit</name>
-                    <state></state>
+                    <state>48</state>
                 </option>
                 <option>
                     <name>CCSwoClockAuto</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>CCSwoClockEdit</name>
