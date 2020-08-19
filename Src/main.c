@@ -12,10 +12,8 @@
 #define USB_DP 12
 //GPIO C
 #define ONBOARD_LED 13
-
 void main()
 {
-  
   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN //GPIO C enable
     | RCC_APB2ENR_IOPAEN    //GPIO A
     | RCC_APB2ENR_AFIOEN; // Alternate function enable
@@ -43,7 +41,7 @@ void main()
   
   // JTAG-DP Disabled and SW-DP Enabled
   AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_1;
-    
+  
   //1ms SysTick interval.
   while (SysTick_Config(SYSTICK_DIVIDER)==1)	
     asm("nop");	 //reason - bad divider 

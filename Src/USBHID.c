@@ -232,7 +232,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
     }
     if (USB->ISTR & USB_ISTR_SUSP) 
     {
-        loggingEvent("\r\nSuspend ISTR=",USB->ISTR);
+        //loggingEvent("\r\nSuspend ISTR=",USB->ISTR);
         USB->ISTR &= ~USB_ISTR_SUSP;
         if (USB->DADDR & 0x7f) 
         {
@@ -308,7 +308,7 @@ void USB_EPHandler(uint16_t Status)
     uint32_t EP  = USB->EPR[EPn];
     if (EP & EP_CTR_RX)     //something received ?
     { 
-        loggingEvent("\r\nReceived EP=",EPn);
+        loggingEvent("\r\nReceived from EPn=",EPn);
         USBLIB_Pma2EPBuf(EPn);
         if (EPn == 0)       //Control endpoint ?
         { 
@@ -405,13 +405,12 @@ void USB_EPHandler(uint16_t Status)
             }//Request type Class ?
           }//Setup packet
           else
-            debugprint(" not setup packet");
-          //  logging(SetupPacket,"?C");
+            loggingEvent("\r\nNot Setup Packet EP[0]=",(uint16_t)USB->EPR[0]);
         }//Control endpoint 
         
         else 
         { // Got data from another EP
-         asm("nop");
+         loggingEvent("\r\nGot from  EP=",EPn);
         //   uUSBLIB_DataReceivedHandler(EpData[EPn].pRX_BUFF, EpData[EPn].lRX);
         }
         USB->EPR[EPn] &= 0x78f; //reset flag CTR_RX
@@ -420,6 +419,7 @@ void USB_EPHandler(uint16_t Status)
     
     if (EP & EP_CTR_TX) //something transmitted
       { 
+        debugprint("\r\nTransmit Data ");
         if (DeviceAddress) 
         {
           USB->DADDR    = DeviceAddress | 0x80;
@@ -431,6 +431,7 @@ void USB_EPHandler(uint16_t Status)
           USBLIB_setStatTx(EPn, TX_VALID);
         } else 
           {
+            debugprint("\r\nEnd Transmit ");
             //uUSBLIB_DataTransmitedHandler(EPn, EpData[EPn]);
           }
         USB->EPR[EPn] &= 0x870f;   //reset flag CTR_TX
@@ -501,7 +502,7 @@ void USBLIB_Pma2EPBuf(uint8_t EPn)
     uint32_t *Address = (uint32_t *)(USB_PMAADDR + BDTable[EPn].RX_Address * 2);
     uint16_t *Distination = (uint16_t *)EpData[EPn].pRX_BUFF;
     uint8_t   Count = EpData[EPn].lRX = (BDTable[EPn].RX_Count & BDT_COUNTn_RX_Msk); 
-    
+    loggingEvent("\r\nReceive bytes=",Count);
     for (uint8_t i = 0; i < Count; i++)
     {
         *(uint16_t *)Distination = *(uint16_t *)Address;
@@ -554,7 +555,7 @@ void loggingSetupPacket(USBLIB_SetupPacket *pSetup)
 {
   char *pFloat = stradd (debugBuf, "\r\n-------------\r\nTime=");
   pFloat = itoa(GetTick() ,pFloat,10,0);
-  pFloat = stradd (debugBuf, "r\nbmRequestType=");
+  pFloat = stradd (pFloat, "\r\nbmRequestType=");
   pFloat = itoa(pSetup->bmRequestType ,pFloat,2,0);
   pFloat = stradd (pFloat, "\r\nbRequest=");
   pFloat = itoa(pSetup->bRequest ,pFloat,10,0);
@@ -573,12 +574,11 @@ void loggingSetupPacket(USBLIB_SetupPacket *pSetup)
 void loggingEvent(char *eventdesc, uint32_t reg)
 {
   char *pFloat = stradd (debugBuf, "\r\n-------------\r\nTime=");
-  //pFloat = itoa(GetTick() ,pFloat,10,0);
-  pFloat = itoa(12345 ,pFloat,10,0);
+  pFloat = itoa(GetTick() ,pFloat,10,0);
   pFloat = stradd (pFloat, (char*)eventdesc);
   pFloat = itoa(reg ,pFloat,2,0);
-  pFloat = stradd (pFloat, " (");
+  pFloat = stradd (pFloat, " (0x");
   pFloat = itoa(reg ,pFloat,16,0);
-  pFloat = stradd (pFloat, ") ");
+  pFloat = stradd (pFloat, ")\0");
   debugprint (debugBuf);
 } 
