@@ -47,7 +47,7 @@ typedef struct
 } USB_EPinfo;
 
 
-#define BDT_COUNTn_RX_Msk 0x3FF     //RM0008 site 650
+#define  BDT_COUNTn_RX_Msk 0x3FF    //RM0008 site 650
 #define  USB_COUNT_RX_NUM_BLOCK_Pos 10
 #define  USB_COUNT_RX_BLSIZE_Pos    15
 #define  USB_COUNT_RX_BLSIZE        (1<<USB_COUNT_RX_BLSIZE_Pos)
@@ -114,20 +114,32 @@ typedef struct
     uint8_t         wLength;
 } USBLIB_SetupPacket;
 //---------------------------
+#define USB_REQUEST_TYPE            0x60 // bits 5&6 Table 9-2 USB 2.0 specification)
+#define USB_REQUEST_STANDARD        0x00
+#define USB_REQUEST_CLASS           0x20
+#define USB_REQUEST_VENDOR          0x40
 
 
 // USB Standard Request Codes (Table 9-4 USB 2.0 specification)
-#define USB_REQUEST_GET_STATUS 0
-#define USB_REQUEST_CLEAR_FEATURE 1
-#define USB_REQUEST_SET_FEATURE 3
-#define USB_REQUEST_SET_ADDRESS 5
-#define USB_REQUEST_GET_DESCRIPTOR 6
-#define USB_REQUEST_SET_DESCRIPTOR 7
-#define USB_REQUEST_GET_CONFIGURATION 8
-#define USB_REQUEST_SET_CONFIGURATION 9
-#define USB_REQUEST_GET_INTERFACE 10
-#define USB_REQUEST_SET_INTERFACE 11
-#define USB_REQUEST_SYNC_FRAME 12
+#define USB_REQUEST_GET_STATUS               0
+#define USB_REQUEST_CLEAR_FEATURE            1
+#define USB_REQUEST_SET_FEATURE              3
+#define USB_REQUEST_SET_ADDRESS              5
+#define USB_REQUEST_GET_DESCRIPTOR           6
+#define USB_REQUEST_SET_DESCRIPTOR           7
+#define USB_REQUEST_GET_CONFIGURATION        8
+#define USB_REQUEST_SET_CONFIGURATION        9
+#define USB_REQUEST_GET_INTERFACE            10
+#define USB_REQUEST_SET_INTERFACE            11
+#define USB_REQUEST_SYNC_FRAME               12
+
+//USB Class HID Request Codes (chapter 7.2 hid1_11.pdf specification)
+#define USB_HID_GET_REPORT          0x01
+#define USB_HID_GET_IDLE            0x02
+#define USB_HID_GET_PROTOCOL        0x03
+#define USB_HID_SET_REPORT          0x09
+#define USB_HID_SET_IDLE            0x0A
+#define USB_HID_SET_PROTOCOL        0x0B
 
 // USB Descriptor Types (Table 9-5 USB 2.0 specification)
 #define USB_DEVICE_DESC_TYPE        1

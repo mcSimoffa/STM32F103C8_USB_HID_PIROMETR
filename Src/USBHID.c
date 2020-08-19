@@ -16,6 +16,7 @@ typedef struct
   uint16_t	wLength;
   char 		str[2];
 } Typedef_debug ;
+
 Typedef_debug debug[100];
 void logging(USBLIB_SetupPacket * pIncomingPacket, char Str[2]);
 
@@ -104,7 +105,7 @@ const uint8_t aStringDescriptors0[]=
 {
     0x04,               // bLength
     (uint8_t)USB_STR_DESC_TYPE,  //bDescriptorType
-    0x09,0x00               //LANG_ID English
+    0x09,0x04               //LANG_ID English
 };
 const uint8_t aStringDescriptors1[]=
 {
@@ -215,38 +216,8 @@ static const uint8_t HID_Sensor_ReportDesc[184] =
   HID_END_COLLECTION
 }; 
 
-//******************************************************************************
-void USB_Reset(void)
-{
-    uint16_t Addr = sizeof(BDTable)>>1;
-    for (uint8_t i = 0; i < EPCOUNT; i++) //active endpoints
-	{
-        BDTable[i].TX_Address = Addr;
-        BDTable[i].TX_Count   =  0;
-        Addr += EpData[i].TX_Max;
-        BDTable[i].RX_Address = Addr;
-        if (EpData[i].RX_Max >= 64)
-            BDTable[i].RX_Count = (1<<USB_COUNT_RX_BLSIZE_Pos) | ((EpData[i].RX_Max / 64) << USB_COUNT_RX_NUM_BLOCK_Pos);
-        else
-            BDTable[i].RX_Count = ((EpData[i].RX_Max / 2) << USB_COUNT_RX_NUM_BLOCK_Pos);
-
-        Addr += EpData[i].RX_Max;
-        if (!EpData[i].pRX_BUFF)
-            EpData[i].pRX_BUFF = (uint16_t *)malloc(EpData[i].RX_Max);
-
-       USB->EPR[i] = (EpData[i].Number | EpData[i].Type | RX_VALID | TX_NAK);
-    }
-
-    for (uint8_t i = EPCOUNT; i < 8; i++) //inactive endpoints
-        USB->EPR[i] = i | RX_NAK | TX_NAK;
-
-    USB->CNTR   = USB_CNTR_CTRM | USB_CNTR_RESETM | USB_CNTR_SUSPM | USB_CNTR_ERRM;
-    USB->ISTR   = 0x00;
-    USB->BTABLE = 0x00;
-    USB->DADDR  = USB_DADDR_EF; //Enable USB device
-}
-
 //*****************************************************************************
+//                         USB interrupt handler
 void USB_LP_CAN1_RX0_IRQHandler()
 {
     if (USB->ISTR & USB_ISTR_RESET) 
@@ -305,6 +276,35 @@ void USB_LP_CAN1_RX0_IRQHandler()
     USB->ISTR = 0;
 }
 
+//******************************************************************************
+void USB_Reset(void)
+{
+    uint16_t Addr = sizeof(BDTable)>>1;
+    for (uint8_t i = 0; i < EPCOUNT; i++) //active endpoints
+    {
+      BDTable[i].TX_Address = Addr;
+      BDTable[i].TX_Count   =  0;
+      Addr += EpData[i].TX_Max;
+      BDTable[i].RX_Address = Addr;
+      if (EpData[i].RX_Max >= 64)
+          BDTable[i].RX_Count = (1<<USB_COUNT_RX_BLSIZE_Pos) | ((EpData[i].RX_Max / 64) << USB_COUNT_RX_NUM_BLOCK_Pos);
+      else
+          BDTable[i].RX_Count = ((EpData[i].RX_Max / 2) << USB_COUNT_RX_NUM_BLOCK_Pos);
+
+      Addr += EpData[i].RX_Max;
+      if (!EpData[i].pRX_BUFF)
+          EpData[i].pRX_BUFF = (uint16_t *)malloc(EpData[i].RX_Max);
+
+     USB->EPR[i] = (EpData[i].Number | EpData[i].Type | RX_VALID | TX_NAK);
+    }
+    for (uint8_t i = EPCOUNT; i < 8; i++) //inactive endpoints
+        USB->EPR[i] = i | RX_NAK | TX_NAK;
+    USB->CNTR   = USB_CNTR_CTRM | USB_CNTR_RESETM | USB_CNTR_SUSPM | USB_CNTR_ERRM;
+    USB->ISTR   = 0x00;
+    USB->BTABLE = 0x00;
+    USB->DADDR  = USB_DADDR_EF; //Enable USB device
+}
+
 //*****************************************************************************
 void USB_EPHandler(uint16_t Status)
 {
@@ -316,11 +316,13 @@ void USB_EPHandler(uint16_t Status)
         USBLIB_Pma2EPBuf(EPn);
         if (EPn == 0)       //Control endpoint ?
         { 
-            if (EP & USB_EP0R_SETUP) 
+          if (EP & USB_EP0R_SETUP) //Setup packet ?
+          {
+            SetupPacket = (USBLIB_SetupPacket *)EpData[EPn].pRX_BUFF;
+            if ((SetupPacket->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_STANDARD)	//Request type Standard ?
             {
-                SetupPacket = (USBLIB_SetupPacket *)EpData[EPn].pRX_BUFF;
-                switch (SetupPacket->bRequest) 
-                {
+              switch (SetupPacket->bRequest) 
+              {
                 case USB_REQUEST_GET_DESCRIPTOR:
                     logging(SetupPacket,"GD");
                     USBLIB_GetDescriptor(SetupPacket);
@@ -352,47 +354,76 @@ void USB_EPHandler(uint16_t Status)
                   logging(SetupPacket,"GI");
                   USBLIB_SendData(0, 0, 0);
                   break;
-             
-               case USB_REQUEST_CLEAR_FEATURE:
+
+                case USB_REQUEST_CLEAR_FEATURE:
                   logging(SetupPacket,"CF");
                   USBLIB_SendData(0, 0, 0);
                   break;
                   
                 default:
-                  logging(SetupPacket,"??");
-                }
-            }
-        } 
+                  logging(SetupPacket,"?1");
+              }//switch (SetupPacket->bRequest)
+            }//Request type Standard
+            
+            else if ((SetupPacket->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_CLASS)	//Request type Class ?
+            {
+              switch (SetupPacket->bRequest) 
+              {
+                case USB_HID_GET_REPORT:
+                  logging(SetupPacket,"GR");
+                  break;
+                case USB_HID_SET_REPORT:
+                  logging(SetupPacket,"SR");
+                  break;
+                case USB_HID_GET_IDLE:
+                  logging(SetupPacket,"GI");
+                  break;  
+                case USB_HID_SET_IDLE:
+                  logging(SetupPacket,"SI");
+                  break;
+                case USB_HID_GET_PROTOCOL:
+                  logging(SetupPacket,"GP");
+                  break;
+                case USB_HID_SET_PROTOCOL:
+                  logging(SetupPacket,"SP");
+                  break;
+                default:
+                  logging(SetupPacket,"?c");
+                  break;
+              }//switch (SetupPacket->bRequest) 
+            }//Request type Class ?
+          }//Setup packet
+          else
+            logging(SetupPacket,"?C");
+        }//Control endpoint 
+        
         else 
         { // Got data from another EP
-          asm("nop");  // Call user function
-         //   uUSBLIB_DataReceivedHandler(EpData[EPn].pRX_BUFF, EpData[EPn].lRX);
+          logging(SetupPacket,"gd");  // Call user function
+        //   uUSBLIB_DataReceivedHandler(EpData[EPn].pRX_BUFF, EpData[EPn].lRX);
         }
-        
         USB->EPR[EPn] &= 0x78f; //reset flag CTR_RX
         USBLIB_setStatRx(EPn, RX_VALID);
-    }
+    }//something received ?
     
     if (EP & EP_CTR_TX) //something transmitted
       { 
         if (DeviceAddress) 
         {
-            USB->DADDR    = DeviceAddress | 0x80;
-            DeviceAddress = 0;
+          USB->DADDR    = DeviceAddress | 0x80;
+          DeviceAddress = 0;
         }
-
         if (EpData[EPn].lTX) //Have to transmit something?
         {           
-            USBLIB_EPBuf2Pma(EPn);
-            USBLIB_setStatTx(EPn, TX_VALID);
+          USBLIB_EPBuf2Pma(EPn);
+          USBLIB_setStatTx(EPn, TX_VALID);
         } else 
           {
             //uUSBLIB_DataTransmitedHandler(EPn, EpData[EPn]);
           }
-
         USB->EPR[EPn] &= 0x870f;   //reset flag CTR_TX
-      }
-}
+      }//something transmitted
+}//void USB_EPHandler
 
 //*****************************************************************************
 //see chapter 9.4.3 USB 2.0 specification
@@ -499,7 +530,7 @@ void USBLIB_setStatTx(uint8_t EPn, uint16_t Stat)
 void USBLIB_setStatRx(uint8_t EPn, uint16_t Stat)
 {
     register uint16_t val = USB->EPR[EPn];
-    USB->EPR[EPn]         = (val ^ (Stat & EP_STAT_RX)) & (EP_MASK | EP_STAT_RX);
+    USB->EPR[EPn] = (val ^ (Stat & EP_STAT_RX)) & (EP_MASK | EP_STAT_RX);
 }
 
 //*****************************************************************************
@@ -509,17 +540,18 @@ void logging(USBLIB_SetupPacket * pIncomingPacket, char Str[2])
   static uint16_t limit=0;
   if (limit<100)
   {
-    debug[limit].tick_=GetTick();
-	debug[limit].bmRequest =pIncomingPacket->bmRequestType;
-    debug[limit].bRequest =	pIncomingPacket->bRequest;
+    debug[limit].tick_= GetTick();
+    debug[limit].bmRequest = pIncomingPacket->bmRequestType;
+    debug[limit].bRequest = pIncomingPacket->bRequest;
     debug[limit].bValueH = pIncomingPacket->wValue.H;
     debug[limit].bValueL = pIncomingPacket->wValue.L;
-	debug[limit].wLength = 	pIncomingPacket->wLength;
-	debug[limit].str[0]=Str[0];
-	debug[limit].str[1]=Str[1];
+    debug[limit].wLength =  pIncomingPacket->wLength;
+    debug[limit].str[0] = Str[0];
+    debug[limit].str[1] = Str[1];
     limit++;
   }  
   else
     while(1)
       asm("nop");
 }
+

@@ -10,8 +10,6 @@
 //GPIO C
 #define ONBOARD_LED 13
 
-
-
 void main()
 {
   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN //GPIO C enable
@@ -55,7 +53,6 @@ void main()
   //msDelay(50000);
   //GPIO_SET(GPIOA,1<<USB_ENABLE); //Disable USB pullup resistor 1k5
   while (1)
-  {
-  }
+    asm("nop");
 }
 
