@@ -44,8 +44,10 @@ typedef struct
     uint32_t  lTX;          // TX Data length
     uint16_t *pRX_BUFF;     // RX Buffer pointer
     uint32_t  lRX;          // RX Data length
+    uint16_t  status;      //for GET_STATUS answer
 } USB_EPinfo;
-
+#define EP_STATUS_HALT_ON           0x01
+#define EP_STATUS_HALT_OFF          0x00
 
 #define  BDT_COUNTn_RX_Msk 0x3FF    //RM0008 site 650
 #define  USB_COUNT_RX_NUM_BLOCK_Pos 10
@@ -111,13 +113,18 @@ typedef struct
     uint8_t         bRequest;
     USBLIB_WByte    wValue;
     USBLIB_WByte    wIndex;
-    uint16_t         wLength;
+    uint16_t        wLength;
 } USBLIB_SetupPacket;
 //---------------------------
-#define USB_REQUEST_TYPE            0x60 // bits 5&6 Table 9-2 USB 2.0 specification)
+#define USB_REQUEST_TYPE            0x60 // bits 5..6 Table 9-2 USB 2.0 specification)
 #define USB_REQUEST_STANDARD        0x00
 #define USB_REQUEST_CLASS           0x20
 #define USB_REQUEST_VENDOR          0x40
+
+#define USB_REQUEST_RECIPIENT       0x1F // bits 1...4 Table 9-2 USB 2.0 specification)
+#define USB_REQUEST_DEVICE          0x00
+#define USB_REQUEST_INTERFACE       0x01
+#define USB_REQUEST_ENDPOINT        0x02
 
 
 // USB Standard Request Codes (Table 9-4 USB 2.0 specification)
@@ -222,7 +229,7 @@ typedef struct
     uint8_t bDescriptorType;
 } USB_STR_DESCRIPTOR;
 
-//configuration configuration descriptor field 'bmAttributes'  (Table 9-10 USB specification offset = 7)
+//configuration  descriptor field 'bmAttributes'  (Table 9-10 USB specification offset = 7)
 #define BMATTRIBUTES_MASK           0x80
 #define BMATTRIBUTES_SELF_POWERED   0x40
 #define BMATTRIBUTES_REMOTE_WAKEUP  0x20
@@ -239,5 +246,9 @@ typedef struct
 
 #define DEVICE_VENDOR_ID 0x25AE
 #define DEVICE_PRODUCT_ID 0x24AB
+
+//GET_STATUS request (Figure 9-4 USB 2.0 specification)
+#define STATUS_SELF_POWERED         0x01
+#define STATUS_REMOTE_WAKEUP        0x02
 
 #endif //__STM32F103xb_USBDEF_H

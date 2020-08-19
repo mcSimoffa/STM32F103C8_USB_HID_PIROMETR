@@ -212,14 +212,14 @@ static const uint8_t HID_Sensor_ReportDesc[184] =
 void USB_LP_CAN1_RX0_IRQHandler()
 {
     if (USB->ISTR & USB_ISTR_RESET) 
-    { // Reset
+    {
         loggingEvent("\r\nReset. ISTR=",USB->ISTR);
         USB->ISTR &= ~USB_ISTR_RESET;
         USB_Reset();
         return;
     }
     if (USB->ISTR & USB_ISTR_CTR) 
-    { //Handle data on EP
+    {
         loggingEvent("\r\nEP handling ISTR=",USB->ISTR);
         USB_EPHandler((uint16_t)USB->ISTR);
         USB->ISTR &= ~USB_ISTR_CTR;
@@ -280,15 +280,19 @@ void USB_Reset(void)
           BDTable[i].RX_Count = (1<<USB_COUNT_RX_BLSIZE_Pos) | ((EpData[i].RX_Max / 64) << USB_COUNT_RX_NUM_BLOCK_Pos);
       else
           BDTable[i].RX_Count = ((EpData[i].RX_Max / 2) << USB_COUNT_RX_NUM_BLOCK_Pos);
-
+      
       Addr += EpData[i].RX_Max;
       if (!EpData[i].pRX_BUFF)
           EpData[i].pRX_BUFF = (uint16_t *)malloc(EpData[i].RX_Max);
-
-     USB->EPR[i] = (EpData[i].Number | EpData[i].Type | RX_VALID | TX_NAK);
+      EpData[i].status = EP_STATUS_HALT_OFF;
+      USB->EPR[i] = (EpData[i].Number | EpData[i].Type | RX_VALID | TX_NAK);
     }
     for (uint8_t i = EPCOUNT; i < 8; i++) //inactive endpoints
-        USB->EPR[i] = i | RX_NAK | TX_NAK;
+    {
+      USB->EPR[i] = i | RX_NAK | TX_NAK;
+      EpData[i].status = EP_STATUS_HALT_ON;
+    }
+    
     USB->CNTR   = USB_CNTR_CTRM | USB_CNTR_RESETM | USB_CNTR_SUSPM | USB_CNTR_ERRM;
     USB->ISTR   = 0x00;
     USB->BTABLE = 0x00;
@@ -298,7 +302,8 @@ void USB_Reset(void)
 //*****************************************************************************
 void USB_EPHandler(uint16_t Status)
 {
-    uint16_t DeviceConfigured = 0, DeviceStatus = 0;
+    uint16_t DeviceConfigured = 0;
+    uint16_t DeviceStatus = 0;      //BUS_POWERED, NOT Remote WakeUp (Figure 9-4 USB 2.0 specification)
     uint8_t  EPn = Status & ISTR_EP_ID; //endpoint number where occured
     uint32_t EP  = USB->EPR[EPn];
     if (EP & EP_CTR_RX)     //something received ?
@@ -329,12 +334,15 @@ void USB_EPHandler(uint16_t Status)
 
                 case USB_REQUEST_GET_STATUS:
                     debugprint("Get Status");
-                    USBLIB_SendData(0, &DeviceStatus, 2);
+                    if ((SetupPacket->bmRequestType & USB_REQUEST_RECIPIENT) == USB_REQUEST_DEVICE)	//Recipient is Device ?
+                      USBLIB_SendData(0, &DeviceStatus, 2);
+                    if ((SetupPacket->bmRequestType & USB_REQUEST_RECIPIENT) == USB_REQUEST_ENDPOINT)	//Recipient is Endpoint ?
+                      USBLIB_SendData(0, &EpData[SetupPacket->wIndex.L].status, 2);
                     break;
 
                 case USB_REQUEST_GET_CONFIGURATION:
                     debugprint("Get Config");
-                    //USBLIB_SendData(0, &DeviceConfigured, 1);
+                    USBLIB_SendData(0, &DeviceConfigured, 1);
                     break;
 
                 case USB_REQUEST_SET_CONFIGURATION:
@@ -351,6 +359,15 @@ void USB_EPHandler(uint16_t Status)
                 case USB_REQUEST_CLEAR_FEATURE:
                   debugprint("Clear Feature");
                   USBLIB_SendData(0, 0, 0);
+                  if ((SetupPacket->bmRequestType & USB_REQUEST_RECIPIENT) == USB_REQUEST_DEVICE)	//Recipient is Device ?
+                    if(SetupPacket->wValue.L == 1)
+                      DeviceStatus &= (uint16_t)~STATUS_REMOTE_WAKEUP;
+                  
+                  if ((SetupPacket->bmRequestType & USB_REQUEST_RECIPIENT) == USB_REQUEST_ENDPOINT) //Recipient is Endpoint ?    
+                    {
+                      EpData[SetupPacket->wIndex.L].status = SetupPacket->wValue.L;
+                      
+                    }
                   break;
                   
                 default:
