@@ -211,16 +211,24 @@ static const uint8_t HID_Sensor_ReportDesc[184] =
 //                         USB interrupt handler
 void USB_LP_CAN1_RX0_IRQHandler()
 {
+    //logging: Time & ISTR & FNR
+    char *pFloat = stradd (debugBuf, "\r\n-------------\r\nTime=");
+    pFloat = itoa(GetTick() ,pFloat,10,0);
+    stradd (pFloat, "\r\nISTR=");
+    pFloat = itoa(USB->ISTR ,pFloat,2,0);
+    stradd (pFloat, "\r\nFNR=");
+    pFloat = itoa(USB->FNR ,pFloat,2,0);
+    debugprint (debugBuf);
+    
     if (USB->ISTR & USB_ISTR_RESET) 
     {
-        loggingEvent("\r\nReset. ISTR=",USB->ISTR);
+        debugprint("\r\nReset");
         USB->ISTR &= ~USB_ISTR_RESET;
         USB_Reset();
         return;
     }
     if (USB->ISTR & USB_ISTR_CTR) 
     {
-        loggingEvent("\r\nEP handling ISTR=",USB->ISTR);
         USB_EPHandler((uint16_t)USB->ISTR);
         USB->ISTR &= ~USB_ISTR_CTR;
         return;
@@ -232,7 +240,6 @@ void USB_LP_CAN1_RX0_IRQHandler()
     }
     if (USB->ISTR & USB_ISTR_SUSP) 
     {
-        //loggingEvent("\r\nSuspend ISTR=",USB->ISTR);
         USB->ISTR &= ~USB_ISTR_SUSP;
         if (USB->DADDR & 0x7f) 
         {
@@ -243,13 +250,13 @@ void USB_LP_CAN1_RX0_IRQHandler()
     }
     if (USB->ISTR & USB_ISTR_ERR) 
     {
-        loggingEvent("\r\nERROR. ISTR=",USB->ISTR);
+        debugprint("\r\nERROR");
         USB->ISTR &= ~USB_ISTR_ERR;
         return;
     }
     if (USB->ISTR & USB_ISTR_WKUP) 
     {
-        loggingEvent("\r\nWake Up ISTR=",USB->ISTR);
+        debugprint("\r\nWakeUp");
         USB->ISTR &= ~USB_ISTR_WKUP;
         return;
     }
@@ -289,7 +296,7 @@ void USB_Reset(void)
     }
     for (uint8_t i = EPCOUNT; i < 8; i++) //inactive endpoints
     {
-      USB->EPR[i] = i | RX_NAK | TX_NAK;
+      USB->EPR[i] = i; //DISABLED
       EpData[i].status = EP_STATUS_HALT_ON;
     }
     
@@ -306,34 +313,43 @@ void USB_EPHandler(uint16_t Status)
     uint16_t DeviceStatus = 0;      //BUS_POWERED, NOT Remote WakeUp (Figure 9-4 USB 2.0 specification)
     uint8_t  EPn = Status & ISTR_EP_ID; //endpoint number where occured
     uint32_t EP  = USB->EPR[EPn];
+    
+    char *pFloat = stradd (debugBuf," EP=");
+    pFloat = itoa(EP ,pFloat,2,0);
+    debugprint (debugBuf);
+    
     if (EP & EP_CTR_RX)     //something received ?
     { 
-        loggingEvent("\r\nReceived from EPn=",EPn);
+      char *pFloat = stradd (debugBuf,"\r\n received on EPnum=");
+      pFloat = itoa(EPn ,pFloat,10,0);
+      debugprint (debugBuf);
+      
         USBLIB_Pma2EPBuf(EPn);
         if (EPn == 0)       //Control endpoint ?
         { 
           if (EP & USB_EP0R_SETUP) //Setup packet ?
           {
+            debugprint(" SETUP");
             SetupPacket = (USBLIB_SetupPacket *)EpData[EPn].pRX_BUFF;
             loggingSetupPacket(SetupPacket);
             if ((SetupPacket->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_STANDARD)	//Request type Standard ?
             {
-              debugprint("\r\nStandard Request Type ");
+              debugprint(" Standard Request ");
               switch (SetupPacket->bRequest) 
               {
                 case USB_REQUEST_GET_DESCRIPTOR:
-                    debugprint("Get Descriptor");
+                    debugprint("GET_DESCRIPTOR");
                     USBLIB_GetDescriptor(SetupPacket);
                     break;
                     
                 case USB_REQUEST_SET_ADDRESS:
-                    debugprint("Set Address");
+                    debugprint("SET_ADDRESS");
                     USBLIB_SendData(0, 0, 0);
                     DeviceAddress = SetupPacket->wValue.L;
                     break;
 
                 case USB_REQUEST_GET_STATUS:
-                    debugprint("Get Status");
+                    debugprint("GET_STATUS");
                     if ((SetupPacket->bmRequestType & USB_REQUEST_RECIPIENT) == USB_REQUEST_DEVICE)	//Recipient is Device ?
                       USBLIB_SendData(0, &DeviceStatus, 2);
                     if ((SetupPacket->bmRequestType & USB_REQUEST_RECIPIENT) == USB_REQUEST_ENDPOINT)	//Recipient is Endpoint ?
@@ -341,23 +357,23 @@ void USB_EPHandler(uint16_t Status)
                     break;
 
                 case USB_REQUEST_GET_CONFIGURATION:
-                    debugprint("Get Config");
+                    debugprint("GET_CONF");
                     USBLIB_SendData(0, &DeviceConfigured, 1);
                     break;
 
                 case USB_REQUEST_SET_CONFIGURATION:
-                    debugprint("Set Conf");
+                    debugprint("SET_CONF");
                     DeviceConfigured = 1;
                     USBLIB_SendData(0, 0, 0);
                     break;
                     
                 case USB_REQUEST_GET_INTERFACE:
-                  debugprint("Get Interface");
+                  debugprint("GET_INTERFACE");
                   USBLIB_SendData(0, 0, 0);
                   break;
 
                 case USB_REQUEST_CLEAR_FEATURE:
-                  debugprint("Clear Feature");
+                  debugprint("CLEAR_FEATURE");
                   USBLIB_SendData(0, 0, 0);
                   if ((SetupPacket->bmRequestType & USB_REQUEST_RECIPIENT) == USB_REQUEST_DEVICE)	//Recipient is Device ?
                     if(SetupPacket->wValue.L == 1)
@@ -377,26 +393,26 @@ void USB_EPHandler(uint16_t Status)
             
             else if ((SetupPacket->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_CLASS)	//Request type Class ?
             {
-              debugprint("\r\nClass Request Type ");
+              debugprint(" Class Request ");
               switch (SetupPacket->bRequest) 
               {
                 case USB_HID_GET_REPORT:
-                 debugprint("Get Report");
+                 debugprint("GET_REPORT");
                   break;
                 case USB_HID_SET_REPORT:
-                  debugprint("Set Report");
+                  debugprint("SET_REPORT");
                   break;
                 case USB_HID_GET_IDLE:
-                  debugprint("Get Idle");
+                  debugprint("GET_IDLE");
                   break;  
                 case USB_HID_SET_IDLE:
-                  debugprint("Set Idle");
+                  debugprint("SET_IDLE");
                   break;
                 case USB_HID_GET_PROTOCOL:
-                  debugprint("Get Protocol");
+                  debugprint("GET_PROTOCOL");
                   break;
                 case USB_HID_SET_PROTOCOL:
-                  debugprint("Set protocol");
+                  debugprint("SET_PROTOCOL");
                   break;
                 default:
                   debugprint("??");
@@ -405,12 +421,12 @@ void USB_EPHandler(uint16_t Status)
             }//Request type Class ?
           }//Setup packet
           else
-            loggingEvent("\r\nNot Setup Packet EP[0]=",(uint16_t)USB->EPR[0]);
+            debugprint(" OUT");
         }//Control endpoint 
         
         else 
         { // Got data from another EP
-         loggingEvent("\r\nGot from  EP=",EPn);
+         debugprint(" OUT__");
         //   uUSBLIB_DataReceivedHandler(EpData[EPn].pRX_BUFF, EpData[EPn].lRX);
         }
         USB->EPR[EPn] &= 0x78f; //reset flag CTR_RX
@@ -419,7 +435,9 @@ void USB_EPHandler(uint16_t Status)
     
     if (EP & EP_CTR_TX) //something transmitted
       { 
-        debugprint("\r\nTransmit Data ");
+        char *pFloat = stradd (debugBuf, " transmit by EPnum=");
+        pFloat = itoa(EPn ,pFloat,10,0);
+        debugprint (debugBuf);
         if (DeviceAddress) 
         {
           USB->DADDR    = DeviceAddress | 0x80;
@@ -485,7 +503,9 @@ void USBLIB_GetDescriptor(USBLIB_SetupPacket *SPacket)
 //*****************************************************************************
 void USBLIB_SendData(uint8_t EPn, uint16_t *Data, uint16_t Length)
 {
-    loggingEvent("\r\nSend len=",Length);
+    char *pFloat = stradd (debugBuf, "\r\nPrepare to transmit ");
+    pFloat = itoa(Length ,pFloat,10,0);
+    debugprint (debugBuf);
     EpData[EPn].lTX = Length;
     EpData[EPn].pTX_BUFF = Data;
     if (Length > 0)
@@ -502,7 +522,11 @@ void USBLIB_Pma2EPBuf(uint8_t EPn)
     uint32_t *Address = (uint32_t *)(USB_PMAADDR + BDTable[EPn].RX_Address * 2);
     uint16_t *Distination = (uint16_t *)EpData[EPn].pRX_BUFF;
     uint8_t   Count = EpData[EPn].lRX = (BDTable[EPn].RX_Count & BDT_COUNTn_RX_Msk); 
-    loggingEvent("\r\nReceive bytes=",Count);
+    
+    char *pFloat = stradd (debugBuf, "\r\nPMA -> Buffer ");
+    pFloat = itoa(Count ,pFloat,10,0);
+    debugprint (debugBuf);
+    
     for (uint8_t i = 0; i < Count; i++)
     {
         *(uint16_t *)Distination = *(uint16_t *)Address;
@@ -520,7 +544,10 @@ void USBLIB_EPBuf2Pma(uint8_t EPn)
     Count  = EpData[EPn].lTX <= EpData[EPn].TX_Max ? EpData[EPn].lTX : EpData[EPn].TX_Max;
     BDTable[EPn].TX_Count = Count;
     Distination = (uint32_t *)(USB_PMAADDR + BDTable[EPn].TX_Address * 2);
-    //writeDebug('T', 'x', EpData[EPn].lTX,(uint32_t)EpData[EPn].pTX_BUFF); // will transmit xxx bytes
+    
+    char *pFloat = stradd (debugBuf, "\r\nBuffer -> PMA ");
+    pFloat = itoa(Count ,pFloat,10,0);
+    debugprint (debugBuf);
     
     for (uint8_t i = 0; i < (Count + 1) / 2; i++) 
     {
@@ -553,9 +580,7 @@ pSetup - pointer on struct
 **************************************************************************** */
 void loggingSetupPacket(USBLIB_SetupPacket *pSetup)
 {
-  char *pFloat = stradd (debugBuf, "\r\n-------------\r\nTime=");
-  pFloat = itoa(GetTick() ,pFloat,10,0);
-  pFloat = stradd (pFloat, "\r\nbmRequestType=");
+  char *pFloat = stradd (debugBuf, "\r\nbmRequestType=");
   pFloat = itoa(pSetup->bmRequestType ,pFloat,2,0);
   pFloat = stradd (pFloat, "\r\nbRequest=");
   pFloat = itoa(pSetup->bRequest ,pFloat,10,0);
@@ -570,15 +595,3 @@ void loggingSetupPacket(USBLIB_SetupPacket *pSetup)
   debugprint (debugBuf);
   return;
 }
-
-void loggingEvent(char *eventdesc, uint32_t reg)
-{
-  char *pFloat = stradd (debugBuf, "\r\n-------------\r\nTime=");
-  pFloat = itoa(GetTick() ,pFloat,10,0);
-  pFloat = stradd (pFloat, (char*)eventdesc);
-  pFloat = itoa(reg ,pFloat,2,0);
-  pFloat = stradd (pFloat, " (0x");
-  pFloat = itoa(reg ,pFloat,16,0);
-  pFloat = stradd (pFloat, ")\0");
-  debugprint (debugBuf);
-} 
