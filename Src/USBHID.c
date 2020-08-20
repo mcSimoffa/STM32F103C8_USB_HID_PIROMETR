@@ -6,7 +6,7 @@
 #define EPCOUNT 2
 
 void loggingSetupPacket(USBLIB_SetupPacket *pSetup);
-char debugBuf[512];
+char debugBuf[256];
 
 __no_init volatile USB_BDT BDTable[EPCOUNT] @ USB_PMAADDR ; //Buffer Description Table
 
@@ -212,11 +212,11 @@ static const uint8_t HID_Sensor_ReportDesc[184] =
 void USB_LP_CAN1_RX0_IRQHandler()
 {
     //logging: Time & ISTR & FNR
-    char *pFloat = stradd (debugBuf, "\r\n-------------\r\nTime=");
+    char *pFloat = stradd (debugBuf, "\r\n\n-------------\r\nTime=");
     pFloat = itoa(GetTick() ,pFloat,10,0);
-    stradd (pFloat, "\r\nISTR=");
+    pFloat = stradd (pFloat, "\r\nISTR=");
     pFloat = itoa(USB->ISTR ,pFloat,2,0);
-    stradd (pFloat, "\r\nFNR=");
+    pFloat = stradd (pFloat, "\r\nFNR= ");
     pFloat = itoa(USB->FNR ,pFloat,2,0);
     debugprint (debugBuf);
     
@@ -225,6 +225,12 @@ void USB_LP_CAN1_RX0_IRQHandler()
         debugprint("\r\nReset");
         USB->ISTR &= ~USB_ISTR_RESET;
         USB_Reset();
+        return;
+    }
+    if (USB->ISTR & USB_ISTR_ERR) 
+    {
+        debugprint("\r\nERROR");
+        USB->ISTR &= ~USB_ISTR_ERR;
         return;
     }
     if (USB->ISTR & USB_ISTR_CTR) 
@@ -241,17 +247,12 @@ void USB_LP_CAN1_RX0_IRQHandler()
     if (USB->ISTR & USB_ISTR_SUSP) 
     {
         USB->ISTR &= ~USB_ISTR_SUSP;
+        debugprint("\r\nSuspend");
         if (USB->DADDR & 0x7f) 
         {
             USB->DADDR = 0;
             USB->CNTR &= ~ USB_CNTR_SUSPM;
         }
-        return;
-    }
-    if (USB->ISTR & USB_ISTR_ERR) 
-    {
-        debugprint("\r\nERROR");
-        USB->ISTR &= ~USB_ISTR_ERR;
         return;
     }
     if (USB->ISTR & USB_ISTR_WKUP) 
@@ -314,13 +315,13 @@ void USB_EPHandler(uint16_t Status)
     uint8_t  EPn = Status & ISTR_EP_ID; //endpoint number where occured
     uint32_t EP  = USB->EPR[EPn];
     
-    char *pFloat = stradd (debugBuf," EP=");
+    char *pFloat = stradd (debugBuf,"\r\nEP=");
     pFloat = itoa(EP ,pFloat,2,0);
     debugprint (debugBuf);
     
     if (EP & EP_CTR_RX)     //something received ?
     { 
-      char *pFloat = stradd (debugBuf,"\r\n received on EPnum=");
+      char *pFloat = stradd (debugBuf,"\r\nReceived on EPnum=");
       pFloat = itoa(EPn ,pFloat,10,0);
       debugprint (debugBuf);
       
@@ -329,7 +330,7 @@ void USB_EPHandler(uint16_t Status)
         { 
           if (EP & USB_EP0R_SETUP) //Setup packet ?
           {
-            debugprint(" SETUP");
+            debugprint("\r\nSETUP");
             SetupPacket = (USBLIB_SetupPacket *)EpData[EPn].pRX_BUFF;
             loggingSetupPacket(SetupPacket);
             if ((SetupPacket->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_STANDARD)	//Request type Standard ?
@@ -421,12 +422,12 @@ void USB_EPHandler(uint16_t Status)
             }//Request type Class ?
           }//Setup packet
           else
-            debugprint(" OUT");
+            debugprint("\r\nOUT");
         }//Control endpoint 
         
         else 
         { // Got data from another EP
-         debugprint(" OUT__");
+         debugprint("\r\nOUT__");
         //   uUSBLIB_DataReceivedHandler(EpData[EPn].pRX_BUFF, EpData[EPn].lRX);
         }
         USB->EPR[EPn] &= 0x78f; //reset flag CTR_RX
@@ -435,7 +436,7 @@ void USB_EPHandler(uint16_t Status)
     
     if (EP & EP_CTR_TX) //something transmitted
       { 
-        char *pFloat = stradd (debugBuf, " transmit by EPnum=");
+        char *pFloat = stradd (debugBuf, "\r\ntransmit by EPnum=");
         pFloat = itoa(EPn ,pFloat,10,0);
         debugprint (debugBuf);
         if (DeviceAddress) 

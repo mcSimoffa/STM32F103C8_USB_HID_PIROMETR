@@ -18,7 +18,7 @@ void ITM_SendString(uint8_t *pStr, int32_t len)
 void debugprint (char *toSWO)
 {
  while ( *toSWO!=0)
-  ITM_SendChar((uint32_t)*(toSWO++));
+  //ITM_SendChar((uint32_t)*(toSWO++));
  return; 
 }
 

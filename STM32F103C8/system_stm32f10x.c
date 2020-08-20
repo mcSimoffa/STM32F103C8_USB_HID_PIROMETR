@@ -278,11 +278,11 @@ void SystemCoreClockUpdate (void)
   */
   
  //#define PLLXTPRE_PREDIV	
- #define PLL_MULTIPLE  		RCC_CFGR_PLLMULL6
+ #define PLL_MULTIPLE  		RCC_CFGR_PLLMULL9
  #define AHB_DIVIDER   		RCC_CFGR_HPRE_DIV1
  #define APB1_DIVIDER  		RCC_CFGR_PPRE1_DIV2
  #define APB2_DIVIDER  		RCC_CFGR_PPRE2_DIV1
- #define FLASH_LATENCY 		FLASH_ACR_LATENCY_1 //0- 0...24  1- 24...48 2- >48
+ #define FLASH_LATENCY 		FLASH_ACR_LATENCY_2 //0- 0...24  1- 24...48 2- >48
  
 static void SetSysClock(void)
 {

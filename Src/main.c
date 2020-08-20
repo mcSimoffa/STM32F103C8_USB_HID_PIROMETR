@@ -5,7 +5,7 @@
 #include "additional_func.h"
 #include "USBHID.h"
 
-#define SYSTICK_DIVIDER 48000
+#define SYSTICK_DIVIDER 72000
 //GPIO A
 #define USB_ENABLE 7
 #define USB_DM 11
@@ -49,7 +49,7 @@ void main()
   
  //USB initialize
   GPIO_RESET(GPIOA,1<<USB_ENABLE); //Enable USB pullup resistor 1k5
-  RCC->CFGR |= RCC_CFGR_USBPRE; //not divide PLL clock for USB 48MHz
+  //RCC->CFGR |= RCC_CFGR_USBPRE; //not divide PLL clock for USB 48MHz
   RCC->APB1ENR |= RCC_APB1ENR_USBEN; //clocking USB Enable
   USB->CNTR &= ~USB_CNTR_PDWN; //disable PowerDown
   msDelay(1);

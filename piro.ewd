@@ -900,15 +900,15 @@
                 </option>
                 <option>
                     <name>CCCpuClockEdit</name>
-                    <state>48</state>
+                    <state>72</state>
                 </option>
                 <option>
                     <name>CCSwoClockAuto</name>
-                    <state>1</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>CCSwoClockEdit</name>
-                    <state>2000</state>
+                    <state>6000</state>
                 </option>
                 <option>
                     <name>OCJLinkTraceSource</name>

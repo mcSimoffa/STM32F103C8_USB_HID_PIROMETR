@@ -1,0 +1,373 @@
+-------------
+Time=1
+ISTR=100 0000 0000
+FNR=  1000 0000 0000 0000
+Reset
+
+-------------
+Time=4
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=8
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=12
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=16
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=20
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=24
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=28
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=32
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=36
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=40
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=44
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=48
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=52
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=56
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=60
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=64
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=68
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=72
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=76
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=80
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=84
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=88
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=92
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=96
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=100
+ISTR= 1001 0000 0000
+FNR=  1001 1000 0000 0000
+Suspend
+
+-------------
+Time=157
+ISTR=101 0000 0000
+FNR=  1000 0000 0000 0000
+Reset
+
+-------------
+Time=190
+ISTR= 1000 0010 0001 0000
+FNR=  1010 0000 0001 1110
+EP= 1110 1010 0110 0000
+Received on EPnum=0
+PMA -> Buffer 8
+SETUP
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 1
+wValue.L= 0
+wIndex= 0
+wLength= 64 Standard Request GET_DESCRIPTOR
+Prepare to transmit 18
+Buffer -> PMA 8
+
+-------------
+Time=191
+ISTR= 1000 0010 0001 0000
+FNR=  1010 0000 0001 1111
+EP= 1000 0000 1000 0000
+Received on EPnum=0
+PMA -> Buffer 0
+OUT
+transmit by EPnum=0
+Buffer -> PMA 8
+
+-------------
+Time=248
+ISTR=110 0000 0000
+FNR=  1000 0000 0001 1111
+Reset
+
+-------------
+Time=282
+ISTR= 1000 0010 0001 0000
+FNR=  1010 0000 0111 1010
+EP= 1110 1010 0110 0000
+Received on EPnum=0
+PMA -> Buffer 8
+SETUP
+bmRequestType=0
+bRequest=5
+wValue.H= 0
+wValue.L= 55
+wIndex= 0
+wLength= 0 Standard Request SET_ADDRESS
+Prepare to transmit 0
+
+-------------
+Time=283
+ISTR= 1000 0010 0000 0000
+FNR=  1010 0000 0111 1011
+EP=111 0010 1010 0000
+transmit by EPnum=0
+End Transmit 
+
+-------------
+Time=294
+ISTR= 1000 0010 0001 0000
+FNR=  1010 0000 1000 0110
+EP= 1110 1010 0110 0000
+Received on EPnum=0
+PMA -> Buffer 8
+SETUP
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 1
+wValue.L= 0
+wIndex= 0
+wLength= 18 Standard Request GET_DESCRIPTOR
+Prepare to transmit 18
+Buffer -> PMA 8
+
+-------------
+Time=295
+ISTR= 1000 0010 0000 0000
+FNR=  1010 0000 1000 0111
+EP=111 0010 1010 0000
+transmit by EPnum=0
+Buffer -> PMA 8
+
+-------------
+Time=295
+ISTR= 1000 0010 0000 0000
+FNR=  1010 0000 1000 0111
+EP=111 0010 1110 0000
+transmit by EPnum=0
+Buffer -> PMA 2
+
+-------------
+Time=296
+ISTR= 1000 0010 0001 0000
+FNR=  1010 0000 1000 1000
+EP= 1010 0010 1010 0000
+Received on EPnum=0
+PMA -> Buffer 0
+OUT
+transmit by EPnum=0
+End Transmit 
+
+-------------
+Time=300
+ISTR= 1000 0010 0001 0000
+FNR=  1010 0000 1000 1100
+EP= 1110 1010 0110 0000
+Received on EPnum=0
+PMA -> Buffer 8
+SETUP
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 2
+wValue.L= 0
+wIndex= 0
+wLength= 255 Standard Request GET_DESCRIPTOR
+Prepare to transmit 34
+Buffer -> PMA 8
+
+-------------
+Time=301
+ISTR= 1000 0010 0000 0000
+FNR=  1010 0000 1000 1101
+EP=111 0010 1010 0000
+transmit by EPnum=0
+Buffer -> PMA 8
+
+-------------
+Time=302
+ISTR= 1000 0010 0000 0000
+FNR=  1010 0000 1000 1110
+EP=111 0010 1110 0000
+transmit by EPnum=0
+Buffer -> PMA 8
+
+-------------
+Time=302
+ISTR= 1000 0010 0000 0000
+FNR=  1010 0000 1000 1110
+EP=111 0010 1010 0000
+transmit by EPnum=0
+Buffer -> PMA 8
+
+-------------
+Time=303
+ISTR= 1000 0010 0000 0000
+FNR=  1010 0000 1000 1111
+EP=111 0010 1110 0000
+transmit by EPnum=0
+Buffer -> PMA 2
+
+-------------
+Time=303
+ISTR= 1000 0010 0001 0000
+FNR=  1010 0000 1000 1111
+EP= 1010 0010 1010 0000
+Received on EPnum=0
+PMA -> Buffer 0
+OUT
+transmit by EPnum=0
+End Transmit 
+
+-------------
+Time=380
+ISTR= 1000 0010 0001 0000
+FNR=  1010 0000 1101 1100
+EP= 1110 1010 0110 0000
+Received on EPnum=0
+PMA -> Buffer 8
+SETUP
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 1
+wValue.L= 0
+wIndex= 0
+wLength= 18 Standard Request GET_DESCRIPTOR
+Prepare to transmit 18
+Buffer -> PMA 8
+
+-------------
+Time=381
+ISTR= 1000 0010 0000 0000
+FNR=  1010 0000 1101 1101
+EP=111 0010 1010 0000
+transmit by EPnum=0
+Buffer -> PMA 8
+
+-------------
+Time=381
+ISTR= 1000 0010 0000 0000
+FNR=  1010 0000 1101 1101
+EP=111 0010 1110 0000
+transmit by EPnum=0
+Buffer -> PMA 2
+
+-------------
+Time=382
+ISTR= 1000 0010 0001 0000
+FNR=  1010 0000 1101 1110
+EP= 1010 0010 1010 0000
+Received on EPnum=0
+PMA -> Buffer 0
+OUT
+transmit by EPnum=0
+End Transmit 
+
+-------------
+Time=385
+ISTR= 1011 0000 0000
+FNR=  1011 1000 1101 1110
+Suspend
