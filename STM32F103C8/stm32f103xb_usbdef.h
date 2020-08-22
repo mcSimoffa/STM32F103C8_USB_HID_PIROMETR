@@ -7,13 +7,13 @@
 
 typedef struct 
 {
-    uint32_t EPR[8];
-    uint32_t RESERVED[8];
-    uint32_t CNTR;
-    uint32_t ISTR;
-    uint32_t FNR;
-    uint32_t DADDR;
-    uint32_t BTABLE;
+  __IO uint32_t EPR[8];
+  __IO uint32_t RESERVED[8];
+  __IO uint32_t CNTR;
+  __IO uint32_t ISTR;
+  __IO uint32_t FNR;
+  __IO uint32_t DADDR;
+  __IO uint32_t BTABLE;
 } USB_TypeDef;
 
 
@@ -24,14 +24,14 @@ typedef struct
 
 typedef struct 
 {
-    uint16_t TX_Address;
-    uint16_t _res0;
-    uint16_t TX_Count;
-    uint16_t _res1;
-    uint16_t RX_Address;
-    uint16_t _res2;
-    uint16_t RX_Count;
-    uint16_t _res3;
+  __IO uint16_t TX_Address;
+  __IO uint16_t _res0;
+  __IO uint16_t TX_Count;
+  __IO uint16_t _res1;
+  __IO uint16_t RX_Address;
+  __IO uint16_t _res2;
+  __IO uint16_t RX_Count;
+  __IO uint16_t _res3;
 } USB_BDT;
 
 typedef struct 
@@ -44,12 +44,10 @@ typedef struct
     uint32_t  lTX;          // TX Data length
     uint16_t *pRX_BUFF;     // RX Buffer pointer
     uint32_t  lRX;          // RX Data length
-    uint16_t  status;      //for GET_STATUS answer
 } USB_EPinfo;
-#define EP_STATUS_HALT_ON           0x01
-#define EP_STATUS_HALT_OFF          0x00
 
-#define  BDT_COUNTn_RX_Msk 0x3FF    //RM0008 site 650
+
+#define  BDT_COUNTn_RX_Msk 0x3FF     //RM0008 site 650
 #define  USB_COUNT_RX_NUM_BLOCK_Pos 10
 #define  USB_COUNT_RX_BLSIZE_Pos    15
 #define  USB_COUNT_RX_BLSIZE        (1<<USB_COUNT_RX_BLSIZE_Pos)
@@ -113,9 +111,10 @@ typedef struct
     uint8_t         bRequest;
     USBLIB_WByte    wValue;
     USBLIB_WByte    wIndex;
-    uint16_t        wLength;
+    uint8_t         wLength;                                   // need uint16_t but little Endian !!!!!!!!!!!!!!!!!!!!
 } USBLIB_SetupPacket;
 //---------------------------
+
 #define USB_REQUEST_TYPE            0x60 // bits 5..6 Table 9-2 USB 2.0 specification)
 #define USB_REQUEST_STANDARD        0x00
 #define USB_REQUEST_CLASS           0x20
@@ -126,19 +125,18 @@ typedef struct
 #define USB_REQUEST_INTERFACE       0x01
 #define USB_REQUEST_ENDPOINT        0x02
 
-
 // USB Standard Request Codes (Table 9-4 USB 2.0 specification)
-#define USB_REQUEST_GET_STATUS               0
-#define USB_REQUEST_CLEAR_FEATURE            1
-#define USB_REQUEST_SET_FEATURE              3
-#define USB_REQUEST_SET_ADDRESS              5
-#define USB_REQUEST_GET_DESCRIPTOR           6
-#define USB_REQUEST_SET_DESCRIPTOR           7
-#define USB_REQUEST_GET_CONFIGURATION        8
-#define USB_REQUEST_SET_CONFIGURATION        9
-#define USB_REQUEST_GET_INTERFACE            10
-#define USB_REQUEST_SET_INTERFACE            11
-#define USB_REQUEST_SYNC_FRAME               12
+#define USB_REQUEST_GET_STATUS 0
+#define USB_REQUEST_CLEAR_FEATURE 1
+#define USB_REQUEST_SET_FEATURE 3
+#define USB_REQUEST_SET_ADDRESS 5
+#define USB_REQUEST_GET_DESCRIPTOR 6
+#define USB_REQUEST_SET_DESCRIPTOR 7
+#define USB_REQUEST_GET_CONFIGURATION 8
+#define USB_REQUEST_SET_CONFIGURATION 9
+#define USB_REQUEST_GET_INTERFACE 10
+#define USB_REQUEST_SET_INTERFACE 11
+#define USB_REQUEST_SYNC_FRAME 12
 
 //USB Class HID Request Codes (chapter 7.2 hid1_11.pdf specification)
 #define USB_HID_GET_REPORT          0x01
@@ -229,7 +227,7 @@ typedef struct
     uint8_t bDescriptorType;
 } USB_STR_DESCRIPTOR;
 
-//configuration  descriptor field 'bmAttributes'  (Table 9-10 USB specification offset = 7)
+//configuration configuration descriptor field 'bmAttributes'  (Table 9-10 USB specification offset = 7)
 #define BMATTRIBUTES_MASK           0x80
 #define BMATTRIBUTES_SELF_POWERED   0x40
 #define BMATTRIBUTES_REMOTE_WAKEUP  0x20
@@ -243,9 +241,6 @@ typedef struct
 #define EP_TRANSFER_TYPE_ISOCHRONOUS              0x01
 #define EP_TRANSFER_TYPE_BULK                     0x02
 #define EP_TRANSFER_TYPE_INTERRUPT                0x03
-
-#define DEVICE_VENDOR_ID 0x25AE
-#define DEVICE_PRODUCT_ID 0x24AB
 
 //GET_STATUS request (Figure 9-4 USB 2.0 specification)
 #define STATUS_SELF_POWERED         0x01

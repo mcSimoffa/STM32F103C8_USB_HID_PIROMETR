@@ -904,11 +904,11 @@
                 </option>
                 <option>
                     <name>CCSwoClockAuto</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>CCSwoClockEdit</name>
-                    <state>6000</state>
+                    <state>2000</state>
                 </option>
                 <option>
                     <name>OCJLinkTraceSource</name>

@@ -3,7 +3,8 @@
 #include "cll_stm32F10x_gpio.h"
 #include "Systick.h"
 #include "additional_func.h"
-#include "USBHID.h"
+#include "oringbuf.h"
+//for SWO logging activate SWOLOG in Options\C++ compiler\Defined Symbol
 
 #define SYSTICK_DIVIDER 72000
 //GPIO A
@@ -12,8 +13,14 @@
 #define USB_DP 12
 //GPIO C
 #define ONBOARD_LED 13
+
+#ifdef SWOLOG
+   uint8_t toSWO;
+#endif
+  
 void main()
 {
+ 
   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN //GPIO C enable
     | RCC_APB2ENR_IOPAEN    //GPIO A
     | RCC_APB2ENR_AFIOEN; // Alternate function enable
@@ -35,17 +42,27 @@ void main()
   CLL_GPIO_SetPinMode(GPIOC,GPIO_descript,1);   //GPIO C init
   GPIO_SET(GPIOC,1<<ONBOARD_LED); //off LED 
   
+#ifdef SWOLOG
    //SWO debug ON
   DBGMCU->CR &= ~(DBGMCU_CR_TRACE_MODE_0 | DBGMCU_CR_TRACE_MODE_0);
   DBGMCU->CR |= DBGMCU_CR_TRACE_IOEN;
-  
   // JTAG-DP Disabled and SW-DP Enabled
   AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_1;
+#endif
   
   //1ms SysTick interval.
   while (SysTick_Config(SYSTICK_DIVIDER)==1)	
     asm("nop");	 //reason - bad divider 
   NVIC_EnableIRQ(SysTick_IRQn);
+  
+  //Turn ON the takt core couner
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;// Enable DWT
+  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk; //counter ON
+  DWT->CYCCNT = 0; //start value = 0
+  
+  if (!Oringbuf_Create(2000))
+    while(1)
+      asm("nop");   //don't have memory maybe
   
  //USB initialize
   GPIO_RESET(GPIOA,1<<USB_ENABLE); //Enable USB pullup resistor 1k5
@@ -59,9 +76,12 @@ void main()
   USB->CNTR &= ~USB_CNTR_FRES; //disable Force Reset
   NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
   NVIC_EnableIRQ(USBWakeUp_IRQn);
-  //msDelay(50000);
+  //msDelay(4000);
   //GPIO_SET(GPIOA,1<<USB_ENABLE); //Disable USB pullup resistor 1k5
   while (1)
-    asm("nop");
+  {
+  if(Oringbuf_Get(&toSWO,1))
+    ITM_SendChar((uint32_t) toSWO);
+  }
 }
 

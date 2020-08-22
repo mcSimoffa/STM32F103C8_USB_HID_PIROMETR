@@ -18,7 +18,7 @@ void ITM_SendString(uint8_t *pStr, int32_t len)
 void debugprint (char *toSWO)
 {
  while ( *toSWO!=0)
-  //ITM_SendChar((uint32_t)*(toSWO++));
+  ITM_SendChar((uint32_t)*(toSWO++));
  return; 
 }
 
@@ -53,7 +53,7 @@ char *itoa(int32_t sr, char *s, uint8_t radix, uint8_t isSigned)
        *s += ('A'-10);
       else
        *s += '0'; 
-      s++;
+    s++;
     if((radix == 2) && (++tetracnt == 4))
     {
       *(s++) = ' ';

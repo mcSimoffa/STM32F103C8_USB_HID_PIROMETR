@@ -2386,6 +2386,9 @@
             <name>$PROJ_DIR$\Src\main.c</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\Src\oringbuf.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\Src\systick.c</name>
         </file>
         <file>
