@@ -17,10 +17,9 @@
 #ifdef SWOLOG
    uint8_t toSWO;
 #endif
-  
+
 void main()
 {
- 
   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN //GPIO C enable
     | RCC_APB2ENR_IOPAEN    //GPIO A
     | RCC_APB2ENR_AFIOEN; // Alternate function enable
@@ -48,6 +47,10 @@ void main()
   DBGMCU->CR |= DBGMCU_CR_TRACE_IOEN;
   // JTAG-DP Disabled and SW-DP Enabled
   AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_1;
+  
+  if (!Oringbuf_Create(8100))
+    while(1)
+      asm("nop");   //don't have memory maybe
 #endif
   
   //1ms SysTick interval.
@@ -59,10 +62,6 @@ void main()
   CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;// Enable DWT
   DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk; //counter ON
   DWT->CYCCNT = 0; //start value = 0
-  
-  if (!Oringbuf_Create(2000))
-    while(1)
-      asm("nop");   //don't have memory maybe
   
  //USB initialize
   GPIO_RESET(GPIOA,1<<USB_ENABLE); //Enable USB pullup resistor 1k5

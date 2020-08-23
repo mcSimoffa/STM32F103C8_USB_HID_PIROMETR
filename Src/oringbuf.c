@@ -1,7 +1,7 @@
 #include "oringbuf.h"
 
-void *head=0;
-void  *tail=0;
+uint8_t *head=0;
+uint8_t  *tail=0;
 uint16_t size=0;
 uint8_t *lowlimit, *highlimit;
 
@@ -29,8 +29,8 @@ return value - available free size in bytes
 uint16_t Oringbuf_GetFree()
 {
   uint16_t retval;
-  uint8_t *s_head=(uint8_t*)head;
-  uint8_t *s_tail=(uint8_t*)tail;
+  uint8_t *s_head=head;
+  uint8_t *s_tail=tail;
   if(size>0)
     
     retval = (s_head>=s_tail) ? (size-(uint16_t)(s_head-s_tail)) : (uint16_t)(s_tail-s_head);
@@ -47,8 +47,8 @@ return value - contain size in bytes
 ************************************************************** */
 uint16_t Oringbuf_GetFilled()
 {
-  uint8_t *s_head=(uint8_t*)head;
-  uint8_t *s_tail=(uint8_t*)tail;
+  uint8_t *s_head=head;
+  uint8_t *s_tail=tail;
   return ((s_head>=s_tail) ? (uint16_t)(s_head-s_tail) : (size-(uint16_t)(s_tail-s_head))) ; 
 }
 
