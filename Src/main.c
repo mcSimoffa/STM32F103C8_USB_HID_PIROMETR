@@ -8,9 +8,10 @@
 
 #define SYSTICK_DIVIDER 72000
 //GPIO A
-#define USB_ENABLE 7
-#define USB_DM 11
-#define USB_DP 12
+#define USB_ENABLE  7
+#define USART1_TX   9
+#define USB_DM      11
+#define USB_DP      12
 //GPIO C
 #define ONBOARD_LED 13
 
@@ -23,9 +24,10 @@ void main()
  
   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN //GPIO C enable
     | RCC_APB2ENR_IOPAEN    //GPIO A
+    | RCC_APB2ENR_USART1EN
     | RCC_APB2ENR_AFIOEN; // Alternate function enable
   
-  PinParametr GPIO_descript[3];
+  PinParametr GPIO_descript[4];
   GPIO_descript[0].PinPos=USB_DM;
   GPIO_descript[0].PinMode=GPIO_MODE_OUTPUT50_ALT_PUSH_PULL;
   
@@ -34,7 +36,11 @@ void main()
   
   GPIO_descript[2].PinPos=USB_ENABLE;
   GPIO_descript[2].PinMode=GPIO_MODE_OUTPUT50_OPEN_DRAIN;
-  CLL_GPIO_SetPinMode(GPIOA,GPIO_descript,3);   //GPIO A init
+  
+  GPIO_descript[3].PinPos=USART1_TX;
+  GPIO_descript[3].PinMode=GPIO_MODE_OUTPUT10_ALT_PUSH_PULL;
+  
+  CLL_GPIO_SetPinMode(GPIOA,GPIO_descript,4);   //GPIO A init
   GPIO_SET(GPIOA,1<<USB_ENABLE); //Disable USB pullup resistor 1k5
   
   GPIO_descript[0].PinPos=ONBOARD_LED;
@@ -42,12 +48,13 @@ void main()
   CLL_GPIO_SetPinMode(GPIOC,GPIO_descript,1);   //GPIO C init
   GPIO_SET(GPIOC,1<<ONBOARD_LED); //off LED 
   
-#ifdef SWOLOG
-   //SWO debug ON
-  DBGMCU->CR &= ~(DBGMCU_CR_TRACE_MODE_0 | DBGMCU_CR_TRACE_MODE_0);
-  DBGMCU->CR |= DBGMCU_CR_TRACE_IOEN;
-  // JTAG-DP Disabled and SW-DP Enabled
-  AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_1;
+#ifdef SWOLOG //not SWO but USART
+ //USART1 turn ON for output log
+  USART1->CR1 |= USART_CR1_UE ;                 //USART1 enable
+  USART1->CR1 &= ~(uint16_t)(USART_CR1_M);      //8 data bits
+  USART1->CR2 &= ~(uint16_t)(USART_CR2_STOP);   //1 Stop bit
+  USART1->BRR = (uint16_t)4<<4 | (uint16_t)14;  //923 076 baud    (4*16+14)*923076=72Hz
+  USART1->CR1 |= USART_CR1_TE;                  //Tx enable
 #endif
   
   //1ms SysTick interval.
@@ -64,6 +71,7 @@ void main()
     while(1)
       asm("nop");   //don't have memory maybe
   
+  
  //USB initialize
   GPIO_RESET(GPIOA,1<<USB_ENABLE); //Enable USB pullup resistor 1k5
   //RCC->CFGR |= RCC_CFGR_USBPRE; //not divide PLL clock for USB 48MHz
@@ -78,10 +86,15 @@ void main()
   NVIC_EnableIRQ(USBWakeUp_IRQn);
   //msDelay(4000);
   //GPIO_SET(GPIOA,1<<USB_ENABLE); //Disable USB pullup resistor 1k5
+  
   while (1)
   {
-  if(Oringbuf_Get(&toSWO,1))
-    ITM_SendChar((uint32_t) toSWO);
+    if(Oringbuf_Get(&toSWO,1))
+    {
+      while (!(USART1->SR & USART_SR_TXE))
+        asm("nop");
+      USART1->DR = toSWO; 
+    }
   }
 }
 
