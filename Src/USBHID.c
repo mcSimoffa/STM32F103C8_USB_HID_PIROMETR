@@ -177,14 +177,32 @@ void USB_LP_CAN1_RX0_IRQHandler()
 {
     DWT->CYCCNT = 0;
     #ifdef SWOLOG
-      pFloat = stradd (debugBuf, "\r\n\n-------------\r\nTime=");
+      pFloat = stradd (debugBuf, " ");
+    #endif
+      
+    if (USB->ISTR & USB_ISTR_SUSP) 
+    {
+      #ifdef SWOLOG
+        pFloat = stradd (pFloat, "S");
+      #endif
+        USB->ISTR &= ~USB_ISTR_SUSP;
+        if (USB->DADDR & 0x7f) 
+        {
+            USB->DADDR = 0;
+            USB->CNTR &= ~ USB_CNTR_SUSPM;
+        }
+        putlog();
+        return;
+    }
+    #ifdef SWOLOG
+      pFloat = stradd (pFloat, "\r\n\n-------------\r\nTime=");
       pFloat = itoa(GetTick(), pFloat,10,0);
       pFloat = stradd (pFloat, "\r\nISTR=");
       pFloat = itoa(USB->ISTR, pFloat,2,0);
       pFloat = stradd (pFloat, "\r\nFNR=");
       pFloat = itoa(USB->FNR ,pFloat,2,0);
     #endif
-
+      
     if (USB->ISTR & USB_ISTR_RESET) 
     { // Reset
     #ifdef SWOLOG
@@ -208,19 +226,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
         // Handle PMAOVR status
         return;
     }
-    if (USB->ISTR & USB_ISTR_SUSP) 
-    {
-      #ifdef SWOLOG
-        pFloat = stradd (pFloat, "\r\nSUSP");
-      #endif
-        USB->ISTR &= ~USB_ISTR_SUSP;
-        if (USB->DADDR & 0x7f) 
-        {
-            USB->DADDR = 0;
-            USB->CNTR &= ~ USB_CNTR_SUSPM;
-        }
-        return;
-    }
+    
     if (USB->ISTR & USB_ISTR_ERR) 
     {
     #ifdef SWOLOG
@@ -259,7 +265,7 @@ void USB_EPHandler(uint16_t Status)
     uint8_t  EPn = Status & ISTR_EP_ID; //endpoint number where occured
     uint32_t EP  = USB->EPR[EPn];
     #ifdef SWOLOG
-      pFloat = stradd (pFloat," EP=");
+      pFloat = stradd (pFloat,"\r\nEP=");
       pFloat = itoa(EP ,pFloat,2,0);
     #endif
     if (EP & EP_CTR_RX)     //something received ?
