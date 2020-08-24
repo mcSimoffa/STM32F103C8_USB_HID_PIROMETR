@@ -5,9 +5,11 @@
 #include "additional_func.h"
 #include "oringbuf.h"
 
-#define DEVICE_VENDOR_ID 0x25AE
-#define DEVICE_PRODUCT_ID 0x24AB
-#define EPCOUNT 2
+#define DEVICE_VENDOR_ID        0x25AE
+#define DEVICE_PRODUCT_ID       0x24AB
+#define EPCOUNT                 2
+#define LAST_NUM_STRING_DESCR   2
+
 __no_init volatile USB_BDT BDTable[EPCOUNT] @ USB_PMAADDR ; //Buffer Description Table
 
 #ifdef SWOLOG
@@ -24,6 +26,7 @@ USB_EPinfo EpData[EPCOUNT] =
 };
 USBLIB_SetupPacket   *SetupPacket;
 volatile uint8_t      DeviceAddress = 0;
+uint8_t reportPeriod=0;
 
 /*const Typedef_USB_DEVICE_QUALIFIER_DESCRIPTOR sQualDescriptor={
 .bLength = 10, 
@@ -53,7 +56,7 @@ const Typedef_USB_DEVICE_DESCRIPTOR sDeviceDescriptor={
 .bcdDevice_L = 10,
 .bcdDevice_H = 1,
 .iManufacturer = 1,
-.iProduct = 2,
+.iProduct = LAST_NUM_STRING_DESCR,
 .iSerialNumber = 0,
 .bNumConfigurations =1};
 
@@ -192,17 +195,26 @@ void USB_LP_CAN1_RX0_IRQHandler()
       pFloat = stradd (pFloat, "S");
       putlog();
     #endif
-      USB->ISTR &= ~USB_ISTR_SUSP;
       if (USB->DADDR & 0x7f) 
       {
         USB->DADDR = 0;
         USB->CNTR &= ~ USB_CNTR_SUSPM;
         USB->CNTR |= USB_CNTR_WKUPM;
+      #ifdef SWOLOG  
+        pFloat = stradd (pFloat, "\r\nISTR=");
+        pFloat = itoa(USB->ISTR, pFloat,2,0);
+        pFloat = stradd (pFloat, "\r\nFNR=");
+        pFloat = itoa(USB->FNR ,pFloat,2,0);
+        pFloat = stradd (pFloat, "\r\nEP0=");
+        pFloat = itoa(USB->EPR[0] ,pFloat,2,0);
+        putlog();
+      #endif  
       }
+      USB->ISTR &= ~USB_ISTR_SUSP;
       return;
     }
   #ifdef SWOLOG
-    pFloat = stradd (pFloat, "\r\n\n-------------\r\nTime=");
+    pFloat = stradd (pFloat, "\r\n\n---------\r\nTime=");
     pFloat = itoa(GetTick(), pFloat,10,0);
     pFloat = stradd (pFloat, "\r\nISTR=");
     pFloat = itoa(USB->ISTR, pFloat,2,0);
@@ -296,7 +308,7 @@ void USB_EPHandler(uint16_t Status)
         if ((SetupPacket->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_STANDARD)	//Request type Standard ?
         {
       #ifdef SWOLOG
-          pFloat = stradd (pFloat,"STANDARD ");
+          pFloat = stradd (pFloat,"\r\nSTANDARD ");
       #endif
           switch (SetupPacket->bRequest) 
           {
@@ -333,7 +345,10 @@ void USB_EPHandler(uint16_t Status)
           #ifdef SWOLOG
             pFloat = stradd (pFloat,"SET_CONF");
           #endif
-            DeviceConfigured = 1;   //if only one configuration - allowed so
+            //if wValue.L= 0  State = Adresovano
+            //else need STALL answer
+            if (SetupPacket->wValue.L == 1)
+              DeviceConfigured = 1;   //if only one configuration - allowed so
             USBLIB_SendData(0, 0, 0);
             break;
               
@@ -361,49 +376,51 @@ void USB_EPHandler(uint16_t Status)
         else if ((SetupPacket->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_CLASS)	//Request type Class ?
         {
         #ifdef SWOLOG
-          debugprint(" CLASS ");
+          pFloat = stradd (pFloat," CLASS ");
         #endif
           switch (SetupPacket->bRequest) 
           {
             case USB_HID_GET_REPORT:
             #ifdef SWOLOG
-              debugprint("Get Report");
+              pFloat = stradd (pFloat,"Get Report");
             #endif
             break;
                                   
             case USB_HID_SET_REPORT:
             #ifdef SWOLOG
-              debugprint("Set Report");
+              pFloat = stradd (pFloat,"Set Report");
             #endif  
             break;
                                   
             case USB_HID_GET_IDLE:
             #ifdef SWOLOG
-              debugprint("Get Idle");
-            #endif  
+              pFloat = stradd (pFloat,"Get Idle");
+            #endif          
               break; 
                                   
             case USB_HID_SET_IDLE:
             #ifdef SWOLOG
-              debugprint("Set Idle");
-            #endif  
+              pFloat = stradd (pFloat,"Set Idle");
+            #endif
+            reportPeriod = SetupPacket->wValue.H;
+            USBLIB_SendData(0, 0, 0);
             break;
                                   
             case USB_HID_GET_PROTOCOL:
             #ifdef SWOLOG
-              debugprint("Get Protocol");
+              pFloat = stradd (pFloat,"Get Protocol");
             #endif  
             break;
                                   
             case USB_HID_SET_PROTOCOL:
             #ifdef SWOLOG
-              debugprint("Set protocol");
+              pFloat = stradd (pFloat,"Set protocol");
             #endif  
             break;
                                   
             default:
             #ifdef SWOLOG
-              debugprint("??");
+              pFloat = stradd (pFloat,"??");
             #endif  
             break;
           }//switch (SetupPacket->bRequest) 
@@ -448,9 +465,6 @@ void USB_EPHandler(uint16_t Status)
           }
         USB->EPR[EPn] &= 0x870f;   //reset flag CTR_TX
       }//something transmitted
-  #ifdef SWOLOG
-    putlog();
-  #endif
 }//void USB_EPHandler
 
 //*****************************************************************************
@@ -463,7 +477,7 @@ void USBLIB_GetDescriptor(USBLIB_SetupPacket *SPacket)
   {
     case USB_DEVICE_DESC_TYPE:
     #ifdef SWOLOG
-      debugprint("DEVICE");
+      pFloat = stradd (pFloat,"DEVICE");
     #endif
       descSize=(sizeof(sDeviceDescriptor)< SPacket->wLength)? sizeof(sDeviceDescriptor) : SPacket->wLength;
       USBLIB_SendData(0, (uint16_t *)&sDeviceDescriptor, descSize);
@@ -471,7 +485,7 @@ void USBLIB_GetDescriptor(USBLIB_SetupPacket *SPacket)
 
     case USB_CFG_DESC_TYPE:
     #ifdef SWOLOG
-      debugprint("CONF");
+      pFloat = stradd (pFloat,"CONF");
     #endif  
     //use only one configuration, but wValue.L is ignored
       descSize=(sizeof(aConfDescriptor)< SPacket->wLength)? sizeof(aConfDescriptor) : SPacket->wLength;
@@ -480,16 +494,25 @@ void USBLIB_GetDescriptor(USBLIB_SetupPacket *SPacket)
 
     case USB_STR_DESC_TYPE:
     #ifdef SWOLOG
-      debugprint("STR");
-    #endif  
-      pSTR = (USB_STR_DESCRIPTOR *)StringDescriptors[SetupPacket->wValue.L];
-      descSize=(pSTR->bLength < SPacket->wLength)? pSTR->bLength : SPacket->wLength;
-      USBLIB_SendData(0, (uint16_t *)pSTR, descSize);
+      pFloat = stradd (pFloat,"STR");
+    #endif
+      if (SPacket->wValue.L > LAST_NUM_STRING_DESCR)
+        {
+          //USBLIB_SendData(0, 0, 0);
+          BDTable[0].TX_Count = 0;
+          USBLIB_setStatTx(0, TX_STALL); 
+        }
+        else
+        {
+          pSTR = (USB_STR_DESCRIPTOR *)StringDescriptors[SetupPacket->wValue.L];
+          descSize=(pSTR->bLength < SPacket->wLength)? pSTR->bLength : SPacket->wLength;
+          USBLIB_SendData(0, (uint16_t *)pSTR, descSize);
+        }
       break;
         
     case USB_DEVICE_QR_DESC_TYPE:
     #ifdef SWOLOG
-      debugprint("QUAL");
+      pFloat = stradd (pFloat,"QUAL");
     #endif  
       /*descSize=(sizeof(sQualDescriptor)< SPacket->wLength)? sizeof(sQualDescriptor) : SPacket->wLength;
       USBLIB_SendData(0, (uint16_t *)&sQualDescriptor, descSize);
@@ -500,7 +523,7 @@ void USBLIB_GetDescriptor(USBLIB_SetupPacket *SPacket)
        
     case USB_REPORT_DESC_TYPE:
     #ifdef SWOLOG
-      debugprint("REPORT");
+      pFloat = stradd (pFloat,"REPORT");
     #endif  
       descSize=(sizeof(HID_Sensor_ReportDesc)< SPacket->wLength)? sizeof(HID_Sensor_ReportDesc) : SPacket->wLength;
       USBLIB_SendData(0, (uint16_t *)&HID_Sensor_ReportDesc, descSize);
@@ -508,7 +531,7 @@ void USBLIB_GetDescriptor(USBLIB_SetupPacket *SPacket)
         
     default:
     #ifdef SWOLOG
-      debugprint("??");
+      pFloat = stradd (pFloat,"??");
     #endif   
       USBLIB_SendData(0, 0, 0);
       break;
@@ -615,7 +638,7 @@ void putlog()
   uint16_t len=pFloat-debugBuf;
   if (len)
     if (Oringbuf_Put(debugBuf, len)<len)
-      //while(1)
+      while(1)
         asm("nop");   //debug buffer is owerflowed
   return;
 }

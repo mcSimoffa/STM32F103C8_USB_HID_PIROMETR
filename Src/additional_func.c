@@ -15,7 +15,7 @@ void ITM_SendString(uint8_t *pStr, int32_t len)
  Send to ITM port null terminated string
 *toSWO - pointer of sended string
 ************************************************************* */
-void debugprint (char *toSWO)
+void debugPrint (char *toSWO)
 {
  while ( *toSWO!=0)
   ITM_SendChar((uint32_t)*(toSWO++));
