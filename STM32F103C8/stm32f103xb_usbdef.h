@@ -66,23 +66,23 @@ typedef struct
 #define EP_MASK (EP_CTR_RX | EP_SETUP | EP_TYPE | EP_KIND | EP_CTR_TX | EP_EA) //all bits without toggled bits
 
 
-#define EP_TYPE_MASK_Pos                    (9U)                           
-#define EP_BULK                             0x00000000U                    /*!< EndPoint BULK */
-#define EP_CONTROL                          0x00000200U                    /*!< EndPoint CONTROL */
-#define EP_ISOCHRONOUS                      0x00000400U                    /*!< EndPoint ISOCHRONOUS */
-#define EP_INTERRUPT                        0x00000600U                    /*!< EndPoint INTERRUPT */
+#define EP_TYPE_MASK_Pos   (9U)                           
+#define EP_BULK            0x00000000U                    /*!< EndPoint BULK */
+#define EP_CONTROL         0x00000200U                    /*!< EndPoint CONTROL */
+#define EP_ISOCHRONOUS     0x00000400U                    /*!< EndPoint ISOCHRONOUS */
+#define EP_INTERRUPT       0x00000600U                    /*!< EndPoint INTERRUPT */
 
-//* EP_STAT_TX: TX Status */
-#define TX_DISABLE 0x0000 /* Disabled */
-#define TX_STALL 0x0010   /* Stalled */
-#define TX_NAK 0x0020     /* NAKed */
-#define TX_VALID 0x0030   /* Valid */
+// EP_STAT_TX: TX Status
+#define TX_DISABLE         0x0000 //Disabled
+#define TX_STALL           0x0010 //Stalled 
+#define TX_NAK             0x0020 // NAKed 
+#define TX_VALID           0x0030 // Valid 
 
-/* EP_STAT_RX: RX Status */
-#define RX_DISABLE 0x0000 /* Disabled */
-#define RX_STALL 0x1000   /* Stalled */
-#define RX_NAK 0x2000     /* NAKed */
-#define RX_VALID 0x3000   /* Valid */
+// EP_STAT_RX: RX Status
+#define RX_DISABLE         0x0000 //Disabled
+#define RX_STALL           0x1000 //Stalled
+#define RX_NAK             0x2000 // NAKed
+#define RX_VALID           0x3000 //Valid
 
 
 /******************************************************************************/
@@ -126,17 +126,17 @@ typedef struct
 #define USB_REQUEST_ENDPOINT        0x02
 
 // USB Standard Request Codes (Table 9-4 USB 2.0 specification)
-#define USB_REQUEST_GET_STATUS 0
-#define USB_REQUEST_CLEAR_FEATURE 1
-#define USB_REQUEST_SET_FEATURE 3
-#define USB_REQUEST_SET_ADDRESS 5
-#define USB_REQUEST_GET_DESCRIPTOR 6
-#define USB_REQUEST_SET_DESCRIPTOR 7
-#define USB_REQUEST_GET_CONFIGURATION 8
-#define USB_REQUEST_SET_CONFIGURATION 9
-#define USB_REQUEST_GET_INTERFACE 10
-#define USB_REQUEST_SET_INTERFACE 11
-#define USB_REQUEST_SYNC_FRAME 12
+#define USB_REQUEST_GET_STATUS               0
+#define USB_REQUEST_CLEAR_FEATURE            1
+#define USB_REQUEST_SET_FEATURE              3
+#define USB_REQUEST_SET_ADDRESS              5
+#define USB_REQUEST_GET_DESCRIPTOR           6
+#define USB_REQUEST_SET_DESCRIPTOR           7
+#define USB_REQUEST_GET_CONFIGURATION        8
+#define USB_REQUEST_SET_CONFIGURATION        9
+#define USB_REQUEST_GET_INTERFACE            10
+#define USB_REQUEST_SET_INTERFACE            11
+#define USB_REQUEST_SYNC_FRAME               12
 
 //USB Class HID Request Codes (chapter 7.2 hid1_11.pdf specification)
 #define USB_HID_GET_REPORT          0x01
@@ -162,28 +162,28 @@ typedef struct
 
 
 // USB Device Classes (https://www.usb.org/defined-class-codes)
-#define USB_CLASS_IN_INTERFACE_DESCRIPTOR   0x00
-#define USB_CLASS_AUDIO                     0x01
-#define USB_CLASS_COMM                      0x02
-#define USB_CLASS_HID                       0x03
-#define USB_CLASS_PHYSICAL                  0x05
-#define USB_CLASS_IMAGE                     0x06
-#define USB_CLASS_PRINTER                   0x07
-#define USB_CLASS_MASS_STORAGE              0x08
-#define USB_CLASS_HUB                       0x09
-#define USB_CLASS_CDC_DATA                  0x0A
-#define USB_CLASS_STMART_CARD               0x0B
-#define USB_CLASS_CONTENT_SECURITY          0x0D
-#define USB_CLASS_VIDEO                     0x0E
-#define USB_CLASS_PERSONAL HEALTHCARE		0x0F
-#define USB_CLASS_AUDIO_VIDEO_DEVICES		0x10
-#define USB_CLASS_BILLBOARD_DEVICE			0x11
-#define USB_CLASS_USB_TYPE_C_BRIDGE			0x12
-#define USB_CLASS_DIAGNOSTIC_DEVICE			0xDC
-#define USB_CLASS_WIRELESS_CONTROLLER		0xE0
-#define USB_CLASS_MISCELLANEOUS				0xEF
-#define USB_CLASS_APPLICATION_SPECIFIC		0xFE
-#define USB_CLASS_VENDOR_SPECIFIC			0xFF
+#define USB_CLASS_IN_INTERFACE_DESCRIPTOR    0x00
+#define USB_CLASS_AUDIO                      0x01
+#define USB_CLASS_COMM                       0x02
+#define USB_CLASS_HID                        0x03
+#define USB_CLASS_PHYSICAL                   0x05
+#define USB_CLASS_IMAGE                      0x06
+#define USB_CLASS_PRINTER                    0x07
+#define USB_CLASS_MASS_STORAGE               0x08
+#define USB_CLASS_HUB                        0x09
+#define USB_CLASS_CDC_DATA                   0x0A
+#define USB_CLASS_STMART_CARD                0x0B
+#define USB_CLASS_CONTENT_SECURITY           0x0D
+#define USB_CLASS_VIDEO                      0x0E
+#define USB_CLASS_PERSONAL HEALTHCARE        0x0F
+#define USB_CLASS_AUDIO_VIDEO_DEVICES	0x10
+#define USB_CLASS_BILLBOARD_DEVICE		0x11
+#define USB_CLASS_USB_TYPE_C_BRIDGE		0x12
+#define USB_CLASS_DIAGNOSTIC_DEVICE		0xDC
+#define USB_CLASS_WIRELESS_CONTROLLER	0xE0
+#define USB_CLASS_MISCELLANEOUS		0xEF
+#define USB_CLASS_APPLICATION_SPECIFIC	0xFE
+#define USB_CLASS_VENDOR_SPECIFIC		0xFF
 
 typedef struct // Table 9-8 USB specification
 {
