@@ -86,7 +86,7 @@ const uint8_t aConfDescriptor[] =
 // HID descriptor (6.2.1 Device Class Definition for Human Interface Devices (HID) Version 1.11 )
         0x09,               //bLength
         USB_HID_DESC_TYPE,  //bDescriptorType: HID
-        0x11,  0x01,        //bBCDHID low & high (ver 1.12)   
+        0x11,  0x01,        //bBCDHID low & high (ver 1.11)   
         0x00,               //bCountryCode (not Localisation)
         0x01,               //bNumDescriptors (follow 1 report descriptor)
         USB_REPORT_DESC_TYPE,   //bDescriptorType (report)
@@ -139,8 +139,8 @@ static const uint8_t HID_Sensor_ReportDesc[23] =
   0x15, 0x00,			// LOGICAL_MINIMUM (0)
   0x26, 0xff, 0x00,		// LOGICAL_MAXIMUM (255)
   0x75, 0x08,			// REPORT_SIZE (8)
-  0x95, 64,				// REPORT_COUNT(64)
-  0xB1, 0x02,			//FEATURE (Data,Var,Abs)
+  0x95, 4,				// REPORT_COUNT(4)
+  0x81, 0x02,			//INPUT (Data,Var,Abs)
   0xc0					//END_COLLECTION
 }; 
 
@@ -175,7 +175,7 @@ void USB_Reset(void)
     for (uint8_t i = EPCOUNT; i < 8; i++) //inactive endpoints
         USB->EPR[i] = i | RX_NAK | TX_NAK;
 
-    USB->CNTR   = USB_CNTR_CTRM | USB_CNTR_RESETM | USB_CNTR_SUSPM | USB_CNTR_ERRM;
+    USB->CNTR   = USB_CNTR_CTRM | USB_CNTR_RESETM | USB_CNTR_SUSPM | USB_CNTR_ERRM | USB_CNTR_SOFM;
     USB->ISTR   = 0x00;
     USB->BTABLE = 0x00;
     USB->DADDR  = USB_DADDR_EF; //Enable USB device
@@ -194,7 +194,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
     {
       USB->ISTR &= ~USB_ISTR_SUSP;
     #ifdef SWOLOG
-      pFloat = stradd (pFloat, "S");
+      pFloat = stradd (pFloat, "Sp");
       putlog();
     #endif
       if (USB->DADDR & 0x7f) 
@@ -203,7 +203,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
         USB->CNTR &= ~ USB_CNTR_SUSPM;
         USB->CNTR |= USB_CNTR_WKUPM;
       #ifdef SWOLOG  
-        pFloat = stradd (pFloat, "\r\nISTR=");
+        pFloat = stradd (debugBuf, "\r\nISTR=");
         pFloat = itoa(istr, pFloat,2,0);
         pFloat = stradd (pFloat, "\r\nFNR=");
         pFloat = itoa(USB->FNR ,pFloat,2,0);
@@ -272,6 +272,8 @@ void USB_LP_CAN1_RX0_IRQHandler()
     if (USB->ISTR & USB_ISTR_SOF) 
     {
       USB->ISTR &= ~USB_ISTR_SOF;
+      if ((USB->EPR[0] & EP_STAT_TX) == TX_STALL)
+        USBLIB_setStatTx(0, TX_NAK);
       return;
     }
     
@@ -409,7 +411,7 @@ void USB_EPHandler(uint16_t Status)
               pFloat = stradd (pFloat,"Set Idle");
             #endif
             reportPeriod = SetupPacket->wValue.H;
-            //USBLIB_SendData(0, 0, 0);                                          skoree vsego na SWT IDLE ne nado otvechat
+            USBLIB_SendData(0, 0, 0);
             break;
                                   
             case USB_HID_GET_PROTOCOL:
@@ -546,6 +548,7 @@ void USBLIB_GetDescriptor(USBLIB_SetupPacket *SPacket)
 //*****************************************************************************
 void USBLIB_SendData(uint8_t EPn, uint16_t *Data, uint16_t Length)
 {
+  USB->EPR[EPn] &= 0x870f;   //reset flag CTR_TX          //vozmojno zdes nado obnulit flag TC
 #ifdef SWOLOG
   pFloat = stradd (pFloat, "\r\nPrepare to transmit ");
   pFloat = itoa(Length ,pFloat,10,0);
@@ -556,7 +559,7 @@ void USBLIB_SendData(uint8_t EPn, uint16_t *Data, uint16_t Length)
       USBLIB_EPBuf2Pma(EPn);
     else
       BDTable[EPn].TX_Count = 0;
-                                                                                          //vozmojno zdes nado obnulit flag TC
+                                                                                          
   USBLIB_setStatTx(EPn, TX_VALID);
 }
 
