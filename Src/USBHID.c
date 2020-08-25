@@ -185,12 +185,14 @@ void USB_Reset(void)
 void USB_LP_CAN1_RX0_IRQHandler()
 {
     DWT->CYCCNT = 0;
+    uint16_t istr=(uint16_t)USB->ISTR;
   #ifdef SWOLOG
     pFloat = stradd (debugBuf, " ");
   #endif
       
     if (USB->ISTR & USB_ISTR_SUSP) 
     {
+      USB->ISTR &= ~USB_ISTR_SUSP;
     #ifdef SWOLOG
       pFloat = stradd (pFloat, "S");
       putlog();
@@ -202,7 +204,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
         USB->CNTR |= USB_CNTR_WKUPM;
       #ifdef SWOLOG  
         pFloat = stradd (pFloat, "\r\nISTR=");
-        pFloat = itoa(USB->ISTR, pFloat,2,0);
+        pFloat = itoa(istr, pFloat,2,0);
         pFloat = stradd (pFloat, "\r\nFNR=");
         pFloat = itoa(USB->FNR ,pFloat,2,0);
         pFloat = stradd (pFloat, "\r\nEP0=");
@@ -210,32 +212,31 @@ void USB_LP_CAN1_RX0_IRQHandler()
         putlog();
       #endif  
       }
-      USB->ISTR &= ~USB_ISTR_SUSP;
       return;
     }
   #ifdef SWOLOG
     pFloat = stradd (pFloat, "\r\n\n---------\r\nTime=");
     pFloat = itoa(GetTick(), pFloat,10,0);
     pFloat = stradd (pFloat, "\r\nISTR=");
-    pFloat = itoa(USB->ISTR, pFloat,2,0);
+    pFloat = itoa(istr, pFloat,2,0);
     pFloat = stradd (pFloat, "\r\nFNR=");
     pFloat = itoa(USB->FNR ,pFloat,2,0);
   #endif
       
     if (USB->ISTR & USB_ISTR_RESET) 
     { // Reset
+      USB->ISTR &= ~USB_ISTR_RESET;
     #ifdef SWOLOG
       pFloat = stradd (pFloat, "\r\nRESET");
       putlog();
     #endif      
-      USB->ISTR &= ~USB_ISTR_RESET;
       USB_Reset();
       return;
     }
     if (USB->ISTR & USB_ISTR_CTR) 
     { //Handle data on EP
-      USB_EPHandler((uint16_t)USB->ISTR);
       USB->ISTR &= ~USB_ISTR_CTR;
+      USB_EPHandler((uint16_t)USB->ISTR);
       putlog();
       return;
     }
@@ -248,35 +249,38 @@ void USB_LP_CAN1_RX0_IRQHandler()
     
     if (USB->ISTR & USB_ISTR_ERR) 
     {
+      USB->ISTR &= ~USB_ISTR_ERR;
   #ifdef SWOLOG
       pFloat = stradd (pFloat, "\r\nERR");
       putlog();
   #endif
-      USB->ISTR &= ~USB_ISTR_ERR;
       return;
     }
+    
     if (USB->ISTR & USB_ISTR_WKUP) 
-    {
-  #ifdef SWOLOG
-      pFloat = stradd (pFloat, "\r\nWKUP");
-      putlog();       
-  #endif      
+    {      
       USB->ISTR &= ~USB_ISTR_WKUP;
       USB->CNTR &= ~ USB_CNTR_WKUPM;
       USB->CNTR |= USB_CNTR_SUSPM;
+    #ifdef SWOLOG
+      pFloat = stradd (pFloat, "\r\nWKUP");
+      putlog();       
+    #endif
       return;
     }
+    
     if (USB->ISTR & USB_ISTR_SOF) 
     {
       USB->ISTR &= ~USB_ISTR_SOF;
       return;
     }
+    
     if (USB->ISTR & USB_ISTR_ESOF) 
     {
       USB->ISTR &= ~USB_ISTR_ESOF;
       return;
     }
-    USB->ISTR = 0;
+    USB->ISTR = 0;                                                               //kogda eto ispolnaetsa
 }
 
 //*****************************************************************************
@@ -290,7 +294,8 @@ void USB_EPHandler(uint16_t Status)
     pFloat = itoa(EP ,pFloat,2,0);
   #endif
     if (EP & EP_CTR_RX)     //something received ?
-    { 
+    {
+      USB->EPR[EPn] &= 0x78f; //reset flag CTR_RX
     #ifdef SWOLOG
       pFloat = stradd (pFloat,"\r\n received on EPnum=");
       pFloat = itoa(EPn ,pFloat,10,0);
@@ -373,8 +378,9 @@ void USB_EPHandler(uint16_t Status)
           #endif
           }//switch (SetupPacket->bRequest)
         }//Request type Standard
-        else if ((SetupPacket->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_CLASS)	//Request type Class ?
-        {
+        
+        else if ((SetupPacket->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_CLASS)	
+        { //Request type Class ?
         #ifdef SWOLOG
           pFloat = stradd (pFloat," CLASS ");
         #endif
@@ -403,7 +409,7 @@ void USB_EPHandler(uint16_t Status)
               pFloat = stradd (pFloat,"Set Idle");
             #endif
             reportPeriod = SetupPacket->wValue.H;
-            USBLIB_SendData(0, 0, 0);
+            //USBLIB_SendData(0, 0, 0);                                          skoree vsego na SWT IDLE ne nado otvechat
             break;
                                   
             case USB_HID_GET_PROTOCOL:
@@ -436,12 +442,12 @@ void USB_EPHandler(uint16_t Status)
        //   uUSBLIB_DataReceivedHandler(EpData[EPn].pRX_BUFF, EpData[EPn].lRX);
       }
       
-      USB->EPR[EPn] &= 0x78f; //reset flag CTR_RX
       USBLIB_setStatRx(EPn, RX_VALID);
     }//something received
     
     if (EP & EP_CTR_TX) //something transmitted
       {
+        USB->EPR[EPn] &= 0x870f;   //reset flag CTR_TX
       #ifdef SWOLOG
         pFloat = stradd (pFloat, "\r\nTransmit by EPnum=");
         pFloat = itoa(EPn ,pFloat,10,0);
@@ -461,9 +467,8 @@ void USB_EPHandler(uint16_t Status)
           #ifdef SWOLOG
             pFloat = stradd (pFloat," End Transmit ");
           #endif
-          //uUSBLIB_DataTransmitedHandler(EPn, EpData[EPn]);
+          //DataTransmitedHandler();
           }
-        USB->EPR[EPn] &= 0x870f;   //reset flag CTR_TX
       }//something transmitted
 }//void USB_EPHandler
 
@@ -518,7 +523,7 @@ void USBLIB_GetDescriptor(USBLIB_SetupPacket *SPacket)
       USBLIB_SendData(0, (uint16_t *)&sQualDescriptor, descSize);
       break;  // if have QUALIFIER Descriptor*/
       BDTable[0].TX_Count = 0;
-      USBLIB_setStatTx(0, TX_STALL);
+      USBLIB_setStatTx(0, TX_STALL);                                              //maybe EP_KIND must be 1 ?
       break;
        
     case USB_REPORT_DESC_TYPE:
@@ -551,6 +556,7 @@ void USBLIB_SendData(uint8_t EPn, uint16_t *Data, uint16_t Length)
       USBLIB_EPBuf2Pma(EPn);
     else
       BDTable[EPn].TX_Count = 0;
+                                                                                          //vozmojno zdes nado obnulit flag TC
   USBLIB_setStatTx(EPn, TX_VALID);
 }
 
