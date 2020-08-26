@@ -1,0 +1,856 @@
+ 
+
+---------
+Time=1
+ISTR=100 0000 0000
+FNR= 1000 0000 0000 0000
+RESET Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp 
+
+---------
+Time=158
+ISTR=101 0000 0000
+FNR= 1000 0000 0000 0000
+RESET 
+
+---------
+Time=190
+ISTR= 1000 0000 0001 0000
+FNR=110 0101 0001 1110
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 1
+wValue.L= 0
+wIndex= 0
+wLength= 64
+STANDARD GET_DESCRIPTOR DEVICE
+Prepare to transmit 18
+Buffer -> PMA 8 
+
+---------
+Time=190
+ISTR=10 0000 0000
+FNR= 1010 0001 1111 1110
+EP= 1010 0010 1010 0000
+ received on EPnum=0
+PMA -> Buffer 0
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=248
+ISTR=100 0000 0000
+FNR= 1000 0001 1111 1110
+RESET 
+
+---------
+Time=280
+ISTR= 1000 0000 0001 0000
+FNR=110 0010 0101 1000
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType=0
+bRequest=5
+wValue.H= 0
+wValue.L= 14
+wIndex= 0
+wLength= 0
+STANDARD SET_ADDRESS
+Prepare to transmit 0 
+
+---------
+Time=280
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 0101 1000
+EP=111 0010 1010 0000
+Transmit by EPnum=0 End Transmit  
+
+---------
+Time=291
+ISTR= 1000 0000 0001 0000
+FNR=110 0010 0110 0011
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 1
+wValue.L= 0
+wIndex= 0
+wLength= 18
+STANDARD GET_DESCRIPTOR DEVICE
+Prepare to transmit 18
+Buffer -> PMA 8 
+
+---------
+Time=291
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 0110 0011
+EP=111 0010 1010 0000
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=292
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 0110 0011
+EP=111 0010 1110 0000
+Transmit by EPnum=0
+Buffer -> PMA 2 
+
+---------
+Time=292
+ISTR= 1000 0010 0000 0000
+FNR= 1010 0010 0110 0100
+EP= 1010 0010 1010 0000
+ received on EPnum=0
+PMA -> Buffer 0
+Transmit by EPnum=0 End Transmit  
+
+---------
+Time=293
+ISTR= 1000 0000 0001 0000
+FNR=10 0010 0110 0101
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 2
+wValue.L= 0
+wIndex= 0
+wLength= 255
+STANDARD GET_DESCRIPTOR CONF
+Prepare to transmit 41
+Buffer -> PMA 8 
+
+---------
+Time=293
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 0110 0101
+EP=111 0010 1010 0000
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=293
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 0110 0101
+EP=111 0010 1110 0000
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=293
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 0110 0101
+EP=111 0010 1010 0000
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=293
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 0110 0101
+EP=111 0010 1110 0000
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=293
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 0110 0101
+EP=111 0010 1010 0000
+Transmit by EPnum=0
+Buffer -> PMA 1 
+
+---------
+Time=294
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 0110 0101
+EP= 1010 0010 1110 0000
+ received on EPnum=0
+PMA -> Buffer 0
+Transmit by EPnum=0 End Transmit  
+
+---------
+Time=294
+ISTR= 1000 0000 0001 0000
+FNR= 1010 0010 0110 0101
+EP= 1111 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 3
+wValue.L= 0
+wIndex= 0
+wLength= 255
+STANDARD GET_DESCRIPTOR STR
+Prepare to transmit 4
+Buffer -> PMA 4 
+
+---------
+Time=294
+ISTR= 1000 0010 0000 0000
+FNR= 1010 0010 0110 0110
+EP= 1010 0010 1010 0000
+ received on EPnum=0
+PMA -> Buffer 0
+Transmit by EPnum=0 End Transmit  
+
+---------
+Time=294
+ISTR= 1000 0010 0001 0000
+FNR= 1010 0010 0110 0110
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 3
+wValue.L= 2
+wIndex= 9
+wLength= 255
+STANDARD GET_DESCRIPTOR STR
+Prepare to transmit 20
+Buffer -> PMA 8 
+
+---------
+Time=294
+ISTR=10 0000 0000
+FNR= 1010 0010 0110 0110
+EP=111 0010 1010 0000
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=294
+ISTR=10 0000 0000
+FNR= 1010 0010 0110 0110
+EP=111 0010 1110 0000
+Transmit by EPnum=0
+Buffer -> PMA 4 
+
+---------
+Time=294
+ISTR=10 0000 0000
+FNR= 1010 0010 0110 0110
+EP= 1010 0010 1010 0000
+ received on EPnum=0
+PMA -> Buffer 0
+Transmit by EPnum=0 End Transmit  
+
+---------
+Time=294
+ISTR=10 0000 0000
+FNR= 1010 0010 0110 0110
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 6
+wValue.L= 0
+wIndex= 0
+wLength= 10
+STANDARD GET_DESCRIPTOR QUAL 
+
+---------
+Time=366
+ISTR= 1000 0000 0001 0000
+FNR= 1010 0010 1010 1101
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 1
+wValue.L= 0
+wIndex= 0
+wLength= 18
+STANDARD GET_DESCRIPTOR DEVICE
+Prepare to transmit 18
+Buffer -> PMA 8 
+
+---------
+Time=366
+ISTR=10 0000 0000
+FNR= 1010 0010 1010 1110
+EP=111 0010 1010 0000
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=366
+ISTR=10 0000 0000
+FNR= 1010 0010 1010 1110
+EP=111 0010 1110 0000
+Transmit by EPnum=0
+Buffer -> PMA 2 
+
+---------
+Time=366
+ISTR=10 0000 0000
+FNR= 1010 0010 1010 1110
+EP= 1010 0010 1010 0000
+ received on EPnum=0
+PMA -> Buffer 0
+Transmit by EPnum=0 End Transmit  
+
+---------
+Time=366
+ISTR=10 0000 0000
+FNR= 1010 0010 1010 1110
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 2
+wValue.L= 0
+wIndex= 0
+wLength= 9
+STANDARD GET_DESCRIPTOR CONF
+Prepare to transmit 9
+Buffer -> PMA 8 
+
+---------
+Time=366
+ISTR=10 0000 0000
+FNR= 1010 0010 1010 1110
+EP=111 0010 1010 0000
+Transmit by EPnum=0
+Buffer -> PMA 1 
+
+---------
+Time=366
+ISTR=10 0000 0000
+FNR= 1010 0010 1010 1110
+EP= 1010 0010 1110 0000
+ received on EPnum=0
+PMA -> Buffer 0
+Transmit by EPnum=0 End Transmit  
+
+---------
+Time=366
+ISTR= 1000 0000 0001 0000
+FNR=10 0010 1010 1110
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 2
+wValue.L= 0
+wIndex= 0
+wLength= 41
+STANDARD GET_DESCRIPTOR CONF
+Prepare to transmit 41
+Buffer -> PMA 8 
+
+---------
+Time=367
+ISTR=10 0000 0000
+FNR= 1010 0010 1010 1111
+EP=111 0010 1010 0000
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=367
+ISTR=10 0000 0000
+FNR= 1010 0010 1010 1111
+EP=111 0010 1110 0000
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=367
+ISTR=10 0000 0000
+FNR= 1010 0010 1010 1111
+EP=111 0010 1010 0000
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=367
+ISTR=10 0000 0000
+FNR= 1010 0010 1010 1111
+EP=111 0010 1110 0000
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=367
+ISTR=10 0000 0000
+FNR= 1010 0010 1010 1111
+EP=111 0010 1010 0000
+Transmit by EPnum=0
+Buffer -> PMA 1 
+
+---------
+Time=367
+ISTR= 1000 0010 0000 0000
+FNR= 1010 0010 1010 1111
+EP= 1010 0010 1110 0000
+ received on EPnum=0
+PMA -> Buffer 0
+Transmit by EPnum=0 End Transmit  
+
+---------
+Time=367
+ISTR=10 0000 0000
+FNR= 1010 0010 1010 1111
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType=0
+bRequest=9
+wValue.H= 0
+wValue.L= 1
+wIndex= 0
+wLength= 0
+STANDARD SET_CONF
+Prepare to transmit 0 
+
+---------
+Time=367
+ISTR=10 0000 0000
+FNR= 1010 0010 1010 1111
+EP=111 0010 1010 0000
+Transmit by EPnum=0 End Transmit  
+
+---------
+Time=368
+ISTR= 1000 0000 0001 0000
+FNR= 1010 0010 1011 0000
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType=10 0001
+bRequest=10
+wValue.H= 0
+wValue.L= 0
+wIndex= 0
+wLength= 0 CLASS Set Idle
+Prepare to transmit 0 
+
+---------
+Time=368
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 1011 0000
+EP= 1110 1010 1110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType= 1000 0001
+bRequest=6
+wValue.H= 34
+wValue.L= 0
+wIndex= 0
+wLength= 87
+STANDARD GET_DESCRIPTOR REPORT
+Prepare to transmit 23
+Buffer -> PMA 8
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=368
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 1011 0000
+EP=111 0010 1010 0000
+Transmit by EPnum=0
+Buffer -> PMA 7 
+
+---------
+Time=368
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 1011 0000
+EP= 1010 0010 1110 0000
+ received on EPnum=0
+PMA -> Buffer 0
+Transmit by EPnum=0 End Transmit  
+
+---------
+Time=368
+ISTR= 1000 0000 0001 0000
+FNR=110 0010 1011 0000
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType= 1000 0001
+bRequest=6
+wValue.H= 34
+wValue.L= 0
+wIndex= 0
+wLength= 87
+STANDARD GET_DESCRIPTOR REPORT
+Prepare to transmit 23
+Buffer -> PMA 8 
+
+---------
+Time=369
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 1011 0000
+EP=111 0010 1010 0000
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=369
+ISTR=10 0000 0000
+FNR= 1010 0010 1011 0001
+EP=111 0010 1110 0000
+Transmit by EPnum=0
+Buffer -> PMA 7 
+
+---------
+Time=369
+ISTR=10 0000 0000
+FNR= 1010 0010 1011 0001
+EP= 1010 0010 1010 0000
+ received on EPnum=0
+PMA -> Buffer 0
+Transmit by EPnum=0 End Transmit  
+
+---------
+Time=388
+ISTR= 1000 0000 0001 0000
+FNR= 1010 0010 1100 0011
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 6
+wValue.L= 0
+wIndex= 0
+wLength= 10
+STANDARD GET_DESCRIPTOR QUAL 
+
+---------
+Time=389
+ISTR= 1000 0000 0001 0000
+FNR= 1010 0010 1100 0101
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 3
+wValue.L= 0
+wIndex= 0
+wLength= 254
+STANDARD GET_DESCRIPTOR STR
+Prepare to transmit 4
+Buffer -> PMA 4 
+
+---------
+Time=390
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 1100 0101
+EP= 1010 0010 1010 0000
+ received on EPnum=0
+PMA -> Buffer 0
+Transmit by EPnum=0 End Transmit  
+
+---------
+Time=390
+ISTR= 1000 0000 0001 0000
+FNR=10 0010 1100 0110
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 3
+wValue.L= 1
+wIndex= 9
+wLength= 254
+STANDARD GET_DESCRIPTOR STR
+Prepare to transmit 36
+Buffer -> PMA 8 
+
+---------
+Time=390
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 1100 0110
+EP=111 0010 1010 0000
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=390
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 1100 0110
+EP=111 0010 1110 0000
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=391
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 1100 0110
+EP=111 0010 1010 0000
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=391
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 1100 0111
+EP=111 0010 1110 0000
+Transmit by EPnum=0
+Buffer -> PMA 4 
+
+---------
+Time=391
+ISTR= 1000 0010 0000 0000
+FNR= 1010 0010 1100 0111
+EP= 1010 0010 1010 0000
+ received on EPnum=0
+PMA -> Buffer 0
+Transmit by EPnum=0 End Transmit  
+
+---------
+Time=391
+ISTR= 1000 0000 0001 0000
+FNR=110 0010 1100 0111
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 3
+wValue.L= 2
+wIndex= 9
+wLength= 254
+STANDARD GET_DESCRIPTOR STR
+Prepare to transmit 20
+Buffer -> PMA 8 
+
+---------
+Time=391
+ISTR= 1000 0000 0000 0000
+FNR=110 0010 1100 0111
+EP=111 0010 1010 0000
+Transmit by EPnum=0
+Buffer -> PMA 8 
+
+---------
+Time=391
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 1100 0111
+EP=111 0010 1110 0000
+Transmit by EPnum=0
+Buffer -> PMA 4 
+
+---------
+Time=391
+ISTR= 1000 0000 0000 0000
+FNR= 1010 0010 1100 0111
+EP= 1010 0010 1010 0000
+ received on EPnum=0
+PMA -> Buffer 0
+Transmit by EPnum=0 End Transmit  
+
+---------
+Time=392
+ISTR= 1000 0000 0001 0000
+FNR= 1010 0010 1100 1000
+EP= 1110 1010 0110 0000
+ received on EPnum=0
+PMA -> Buffer 8
+SETUP 
+bmRequestType= 1000 0000
+bRequest=6
+wValue.H= 3
+wValue.L= 238
+wIndex= 9
+wLength= 254
+STANDARD GET_DESCRIPTOR STR 
+
+---------
+Time=19649
+ISTR=10 0000 0000
+FNR= 1010 0110 0000 0000
+EP= 1110 0110 0010 0001
+ received on EPnum=1
+PMA -> Buffer 4 OUT__ 
+
+---------
+Time=19745
+ISTR=10 0000 0000
+FNR= 1010 0110 0110 0000
+EP= 1010 0110 0010 0001
+ received on EPnum=1
+PMA -> Buffer 4 OUT__ 
+
+---------
+Time=19809
+ISTR=10 0000 0000
+FNR= 1010 0110 1010 0000
+EP= 1110 0110 0010 0001
+ received on EPnum=1
+PMA -> Buffer 4 OUT__ 
+
+---------
+Time=19841
+ISTR=10 0000 0000
+FNR= 1010 0110 1100 0000
+EP= 1010 0110 0010 0001
+ received on EPnum=1
+PMA -> Buffer 4 OUT__ 
+
+---------
+Time=19969
+ISTR=10 0000 0000
+FNR= 1010 0111 0100 0000
+EP= 1110 0110 0010 0001
+ received on EPnum=1
+PMA -> Buffer 4 OUT__ 
+
+---------
+Time=78886
+ISTR=10 0000 0000
+FNR= 1010 0101 0110 0000
+EP= 1010 0110 0010 0001
+ received on EPnum=1
+PMA -> Buffer 4 OUT__ 
+
+---------
+Time=79014
+ISTR=10 0000 0000
+FNR= 1010 0101 1110 0000
+EP= 1110 0110 0010 0001
+ received on EPnum=1
+PMA -> Buffer 4 OUT__ 
+
+---------
+Time=92455
+ISTR=10 0000 0000
+FNR= 1010 0010 0110 0000
+EP= 1010 0110 0010 0001
+ received on EPnum=1
+PMA -> Buffer 4 OUT__ 
+
+---------
+Time=95111
+ISTR=10 0000 0000
+FNR= 1010 0100 1100 0000
+EP= 1110 0110 0010 0001
+ received on EPnum=1
+PMA -> Buffer 4 OUT__ 
+
+---------
+Time=95687
+ISTR=10 0000 0000
+FNR= 1010 0111 0000 0000
+EP= 1010 0110 0010 0001
+ received on EPnum=1
+PMA -> Buffer 4 OUT__ 
+
+---------
+Time=96263
+ISTR=10 0000 0000
+FNR= 1010 0001 0100 0000
+EP= 1110 0110 0010 0001
+ received on EPnum=1
+PMA -> Buffer 4 OUT__ 
+
+---------
+Time=101671
+ISTR=10 0000 0000
+FNR= 1010 0110 0110 0000
+EP= 1010 0110 0010 0001
+ received on EPnum=1
+PMA -> Buffer 4 OUT__
+
+
+const uint8_t aConfDescriptor[] = 
+    {
+// CONFIGURATION Descriptor  (Table 9-10 USB specification)
+        0x09,               //bLength: Configuration Descriptor size
+        USB_CFG_DESC_TYPE,  // bDescriptorType: Configuration
+        41, 0,              // wTotalLength low & high  sizeof (configuration + interface + endpoint + HID) 34bytes
+        0x01,               // bNumInterfaces: 1 interface
+        0x01,               // bConfigurationValue: Configuration value
+        0x00,               // iConfiguration: Index of string descriptor describing the configuration
+        BMATTRIBUTES_MASK,  // bmAttributes - Bus powered
+        0x32,               // MaxPower 100 mA
+        
+// INTERFACE descriptor (Table 9-12 USB specification)
+        0x09,               //bLength
+        USB_IFACE_DESC_TYPE,//bDescriptorType: Interface
+        0x00,               //bInterfaceNumber
+        0x00,               //bAlternateSetting
+        0x02,               //bNumEndpoints
+        USB_CLASS_HID,      //bInterfaceClass
+        0x00,               //bInterfaceSubClass (0=not bootable or 1=bootable)
+        0x00,               //bInterfaceProtocol (if not bootable than always=0)
+        0x00,               //iInterface (no string Interface descriptor)
+        
+// HID descriptor (6.2.1 Device Class Definition for Human Interface Devices (HID) Version 1.11 )
+        0x09,               //bLength
+        USB_HID_DESC_TYPE,  //bDescriptorType: HID
+        0x11,  0x01,        //bBCDHID low & high (ver 1.11)   
+        0x00,               //bCountryCode (not Localisation)
+        0x01,               //bNumDescriptors (follow 1 report descriptor)
+        USB_REPORT_DESC_TYPE,   //bDescriptorType (report)
+        23,0x00,           //wDescriptorLength (report descriptor lenth)
+ 
+// ENDPOINT descriptor   (Table 9-13 USB specification) 
+        0x07,                       //bLength:
+        USB_EP_DESC_TYPE,           //bDescriptorType
+        IN_ENDPOINT | 0x01,         //bEndpointAddress(ep#1 direction=IN)
+        EP_TRANSFER_TYPE_INTERRUPT, // bmAttributes
+        0x08, 0x00,                 // wMaxPacketSize: 8 Byte max 
+        0x20,                       // bInterval: Polling Interval (32 ms)   
+          
+        0x07,                       //bLength:
+        USB_EP_DESC_TYPE,           //bDescriptorType
+        OUT_ENDPOINT | 0x01,        //bEndpointAddress(ep#1 direction=IN)
+        EP_TRANSFER_TYPE_INTERRUPT, // bmAttributes
+        0x08, 0x00,                 // wMaxPacketSize: 8 Byte max 
+        0x20                        // bInterval: Polling Interval (32 ms) 
+    };
+
+};
+
+static const uint8_t HID_Sensor_ReportDesc[23] =
+{
+
+  0x06, 0x00, 0xff,		// USAGE_PAGE (Generic Desktop)
+  0x09, 0x01,			// USAGE (Vendor Usage 1)
+  0xa1, 0x01,			// COLLECTION (Application)
+  0x19, 0x01,			// USAGE_MINIMUM (Vendor Usage 1)
+  0x29, 0x01,			// USAGE_MAXIMUM (Vendor Usage 1)
+  0x15, 0x00,			// LOGICAL_MINIMUM (0)
+  0x26, 0xff, 0x00,		// LOGICAL_MAXIMUM (255)
+  0x75, 0x08,			// REPORT_SIZE (8)
+  0x95, 4,				// REPORT_COUNT(4)
+  0x91, 0x02,			//output (Data,Var,Abs)
+  0xc0					//END_COLLECTION
+}; 

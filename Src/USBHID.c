@@ -65,7 +65,7 @@ const uint8_t aConfDescriptor[] =
 // CONFIGURATION Descriptor  (Table 9-10 USB specification)
         0x09,               //bLength: Configuration Descriptor size
         USB_CFG_DESC_TYPE,  // bDescriptorType: Configuration
-        34, 0,              // wTotalLength low & high  sizeof (configuration + interface + endpoint + HID) 34bytes
+        41, 0,              // wTotalLength low & high  sizeof (configuration + interface + endpoint + HID) 34bytes
         0x01,               // bNumInterfaces: 1 interface
         0x01,               // bConfigurationValue: Configuration value
         0x00,               // iConfiguration: Index of string descriptor describing the configuration
@@ -77,7 +77,7 @@ const uint8_t aConfDescriptor[] =
         USB_IFACE_DESC_TYPE,//bDescriptorType: Interface
         0x00,               //bInterfaceNumber
         0x00,               //bAlternateSetting
-        0x01,               //bNumEndpoints
+        0x02,               //bNumEndpoints
         USB_CLASS_HID,      //bInterfaceClass
         0x00,               //bInterfaceSubClass (0=not bootable or 1=bootable)
         0x00,               //bInterfaceProtocol (if not bootable than always=0)
@@ -90,7 +90,7 @@ const uint8_t aConfDescriptor[] =
         0x00,               //bCountryCode (not Localisation)
         0x01,               //bNumDescriptors (follow 1 report descriptor)
         USB_REPORT_DESC_TYPE,   //bDescriptorType (report)
-        23,0x00,           //wDescriptorLength (report descriptor lenth)
+        38,0x00,           //wDescriptorLength (report descriptor lenth)
  
 // ENDPOINT descriptor   (Table 9-13 USB specification) 
         0x07,                       //bLength:
@@ -98,7 +98,14 @@ const uint8_t aConfDescriptor[] =
         IN_ENDPOINT | 0x01,         //bEndpointAddress(ep#1 direction=IN)
         EP_TRANSFER_TYPE_INTERRUPT, // bmAttributes
         0x08, 0x00,                 // wMaxPacketSize: 8 Byte max 
-        0x20                        // bInterval: Polling Interval (32 ms)           
+        0x20,                       // bInterval: Polling Interval (32 ms)   
+          
+        0x07,                       //bLength:
+        USB_EP_DESC_TYPE,           //bDescriptorType
+        OUT_ENDPOINT | 0x01,        //bEndpointAddress(ep#1 direction=IN)
+        EP_TRANSFER_TYPE_INTERRUPT, // bmAttributes
+        0x08, 0x00,                 // wMaxPacketSize: 8 Byte max 
+        0x20                        // bInterval: Polling Interval (32 ms) 
     };
 
 const uint8_t aStringDescriptors0[]=
@@ -128,20 +135,29 @@ uint8_t* StringDescriptors[3]=
   (uint8_t*) &aStringDescriptors2
 };
 
-static const uint8_t HID_Sensor_ReportDesc[23] =
+static const uint8_t HID_Sensor_ReportDesc[38] =
 {
-
-  0x06, 0x00, 0xff,		// USAGE_PAGE (Generic Desktop)
-  0x09, 0x01,			// USAGE (Vendor Usage 1)
-  0xa1, 0x01,			// COLLECTION (Application)
-  0x19, 0x01,			// USAGE_MINIMUM (Vendor Usage 1)
-  0x29, 0x01,			// USAGE_MAXIMUM (Vendor Usage 1)
-  0x15, 0x00,			// LOGICAL_MINIMUM (0)
-  0x26, 0xff, 0x00,		// LOGICAL_MAXIMUM (255)
-  0x75, 0x08,			// REPORT_SIZE (8)
-  0x95, 4,				// REPORT_COUNT(4)
-  0x81, 0x02,			//INPUT (Data,Var,Abs)
-  0xc0					//END_COLLECTION
+    0x06, 0x00, 0xff,            // USAGE_PAGE (Generic Desktop)
+    0x09, 0x01,                  // USAGE (Vendor Usage 1)
+    
+    // System Parameters
+    0xa1, 0x01,                  // COLLECTION (Application)
+    0x85, 0x01,                  // REPORT_ID (1)
+    0x09, 0x01,                  // USAGE (Vendor Usage 1)
+    0x15, 0x00,                  // LOGICAL_MINIMUM (0)
+    0x25, 0x01,                  // LOGICAL_MAXIMUM (1)
+    0x75, 0x08,                  // REPORT_SIZE (8)
+    0x95, 1,                     // REPORT_COUNT (1)
+    0xb1, 0x82,                  // FEATURE (Data,Var,Abs,Vol)
+    0x85, 0x01,                  // REPORT_ID (1)
+    0x09, 0x01,                  // USAGE (Vendor Usage 1)
+    0x91, 0x82,                  // OUTPUT (Data,Var,Abs,Vol)
+    0x85, 0x02,                  // REPORT_ID (4)
+    0x09, 0x02,                  // USAGE (Vendor Usage 4)
+    0x75, 0x08,                  // REPORT_SIZE (8)
+    0x95, 1,                     // REPORT_COUNT (1)
+    0x81, 0x82,                  // INPUT (Data,Var,Abs,Vol)
+    0xC0 /* END_COLLECTION */
 }; 
 
 //******************************************************************************
@@ -173,7 +189,7 @@ void USB_Reset(void)
       }
 
     for (uint8_t i = EPCOUNT; i < 8; i++) //inactive endpoints
-        USB->EPR[i] = i | RX_NAK | TX_NAK;
+        USB->EPR[i] = i | RX_DISABLE | TX_DISABLE;
 
     USB->CNTR   = USB_CNTR_CTRM | USB_CNTR_RESETM | USB_CNTR_SUSPM | USB_CNTR_ERRM | USB_CNTR_SOFM;
     USB->ISTR   = 0x00;
@@ -439,11 +455,11 @@ void USB_EPHandler(uint16_t Status)
       { // Got data from another EP
         asm("nop");  // Call user function
       #ifdef SWOLOG
-        pFloat = stradd (pFloat," OUT__");
+        pFloat = stradd (pFloat," GOT");
       #endif         
        //   uUSBLIB_DataReceivedHandler(EpData[EPn].pRX_BUFF, EpData[EPn].lRX);
       }
-      
+                                                                      //nujno li podtverjdat prinatie dannie
       USBLIB_setStatRx(EPn, RX_VALID);
     }//something received
     
