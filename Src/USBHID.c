@@ -14,6 +14,7 @@ __no_init volatile USB_BDT BDTable[EPCOUNT] @ USB_PMAADDR ; //Buffer Description
 
 #ifdef SWOLOG
   void loggingSetupPacket(USBLIB_SetupPacket *pSetup);
+  void loggingMem(void *pBuf,uint8_t len);
   void putlog();
   char debugBuf[512];
   char *pFloat;
@@ -455,7 +456,8 @@ void USB_EPHandler(uint16_t Status)
       { // Got data from another EP
         asm("nop");  // Call user function
       #ifdef SWOLOG
-        pFloat = stradd (pFloat," GOT");
+        pFloat = stradd (pFloat," DATA");
+        loggingMem(EpData[EPn].pRX_BUFF,EpData[EPn].lRX);
       #endif         
        //   uUSBLIB_DataReceivedHandler(EpData[EPn].pRX_BUFF, EpData[EPn].lRX);
       }
@@ -657,6 +659,17 @@ void loggingSetupPacket(USBLIB_SetupPacket *pSetup)
   pFloat = itoa(pSetup->wLength ,pFloat,10,0);
   return;
 }
+
+ void loggingMem(void *pBuf,uint8_t len)
+ {
+   uint8_t *ptr;
+   ptr = pBuf;
+  for (uint8_t i=0;i<len;i++)
+  {
+   pFloat = itoa((uint32_t) *ptr++ ,pFloat,16,0); 
+   *pFloat++ = ' '; 
+  }
+ }
 
 void putlog()
 {

@@ -48,19 +48,31 @@ char *itoa(int32_t sr, char *s, uint8_t radix, uint8_t isSigned)
   *(s++)='\0';
   do 
   { 
+    if((radix == 2) && (tetracnt++ == 4))
+    {
+      *(s++) = ' ';
+      tetracnt = 1;
+    }
     *s = n % radix;
      if (*s > 9)
        *s += ('A'-10);
       else
        *s += '0'; 
     s++;
-    if((radix == 2) && (++tetracnt == 4))
-    {
-      *(s++) = ' ';
-      tetracnt = 0;
-    }
   } while ((n /= radix) > 0);
-  if (sign < 0)     *s++ = '-';
+  if (sign < 0)
+    *s++ = '-';
+  if (radix == 2)
+    {
+      for(uint8_t i=tetracnt;i<4;i++)
+        *s++ = '0';
+      *s++ = 'B';
+    }
+  if (radix == 16)
+    {
+      *s++ = 'x';
+      *s++ = '0';
+    }
   char *p=s;    //end of string pointer before reverse
   p--;
   char *retVal = --s;

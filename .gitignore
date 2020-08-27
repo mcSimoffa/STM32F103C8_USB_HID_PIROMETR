@@ -2,4 +2,6 @@ Debug/*
 Release/*
 settings/*
 *.log
+*.dep
+
 
