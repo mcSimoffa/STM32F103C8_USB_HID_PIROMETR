@@ -14,7 +14,6 @@ __no_init volatile USB_BDT BDTable[EPCOUNT] @ USB_PMAADDR ; //Buffer Description
 
 #ifdef SWOLOG
   void loggingSetupPacket(USBLIB_SetupPacket *pSetup);
-  void loggingMem(void *pBuf,uint8_t len);
   void putlog();
   char debugBuf[512];
   char *pFloat;
@@ -27,7 +26,8 @@ USB_EPinfo EpData[EPCOUNT] =
 };
 USBLIB_SetupPacket   *SetupPacket;
 volatile uint8_t      DeviceAddress = 0;
-uint8_t reportPeriod=0;
+uint8_t reportPeriod = 0;
+uint16_t DeviceStatus = (~STATUS_SELF_POWERED & ~STATUS_REMOTE_WAKEUP) & DEVICE_STATUS_MASK;
 
 /*const Typedef_USB_DEVICE_QUALIFIER_DESCRIPTOR sQualDescriptor={
 .bLength = 10, 
@@ -305,7 +305,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
 //*****************************************************************************
 void USB_EPHandler(uint16_t Status)
 {
-    uint16_t DeviceConfigured = 0, DeviceStatus = 0;
+    uint16_t DeviceConfigured = 0;
     uint8_t  EPn = Status & ISTR_EP_ID; //endpoint number where occured
     uint32_t EP  = USB->EPR[EPn];
   #ifdef SWOLOG
@@ -355,9 +355,31 @@ void USB_EPHandler(uint16_t Status)
           #ifdef SWOLOG
             pFloat = stradd (pFloat,"GET_STATUS");
           #endif
-            USBLIB_SendData(0, &DeviceStatus, 2);     // I don't sure.... !!!!!!!!!!!!!!!!!!
-            break;
-
+            uint16_t StatusVal;
+            StatusVal = 0;
+            switch(SetupPacket->bmRequestType & USB_REQUEST_RECIPIENT)
+            {
+              case USB_REQUEST_DEVICE:
+              #ifdef SWOLOG
+                pFloat = stradd (pFloat," DEVICE");
+              #endif
+                USBLIB_SendData(0, &DeviceStatus, 2);
+                break;
+              case USB_REQUEST_INTERFACE:
+              #ifdef SWOLOG
+                pFloat = stradd (pFloat," IFACE");
+              #endif
+                USBLIB_SendData(0, &StatusVal, 2);
+              case USB_REQUEST_ENDPOINT:
+              #ifdef SWOLOG
+                pFloat = stradd (pFloat," ENDP");
+              #endif
+                StatusVal = ((USB->EPR[SetupPacket->wIndex.L] & RX_VALID) == RX_STALL) ? 1:0;
+                USBLIB_SendData(0, &StatusVal, 2);  
+                break;
+              default:
+                USBLIB_SendData(0, 0, 0);
+            }
           case USB_REQUEST_GET_CONFIGURATION:
           #ifdef SWOLOG
             pFloat = stradd (pFloat,"GET_CONF");
@@ -456,12 +478,12 @@ void USB_EPHandler(uint16_t Status)
       { // Got data from another EP
         asm("nop");  // Call user function
       #ifdef SWOLOG
-        pFloat = stradd (pFloat," DATA");
-        loggingMem(EpData[EPn].pRX_BUFF,EpData[EPn].lRX);
+        pFloat = stradd (pFloat,"\r\nGot Data");
+        pFloat = printHexMem(EpData[EPn].pRX_BUFF,pFloat,EpData[EPn].lRX);
       #endif         
-       //   uUSBLIB_DataReceivedHandler(EpData[EPn].pRX_BUFF, EpData[EPn].lRX);
-      }
-                                                                      //nujno li podtverjdat prinatie dannie
+        USBLIB_SendData(EPn, 0, 0);                   //nujno li podtverjdat prinatie dannie
+      }// Got data from another EP
+                                                                      
       USBLIB_setStatRx(EPn, RX_VALID);
     }//something received
     
@@ -659,17 +681,6 @@ void loggingSetupPacket(USBLIB_SetupPacket *pSetup)
   pFloat = itoa(pSetup->wLength ,pFloat,10,0);
   return;
 }
-
- void loggingMem(void *pBuf,uint8_t len)
- {
-   uint8_t *ptr;
-   ptr = pBuf;
-  for (uint8_t i=0;i<len;i++)
-  {
-   pFloat = itoa((uint32_t) *ptr++ ,pFloat,16,0); 
-   *pFloat++ = ' '; 
-  }
- }
 
 void putlog()
 {

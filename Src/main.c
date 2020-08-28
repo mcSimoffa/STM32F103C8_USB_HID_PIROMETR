@@ -20,7 +20,6 @@
 
 void main()
 {
-
   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN //GPIO C enable
     | RCC_APB2ENR_IOPAEN    //GPIO A
     | RCC_APB2ENR_AFIOEN; // Alternate function enable

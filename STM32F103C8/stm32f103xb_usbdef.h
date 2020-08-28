@@ -111,7 +111,7 @@ typedef struct
     uint8_t         bRequest;
     USBLIB_WByte    wValue;
     USBLIB_WByte    wIndex;
-    uint8_t         wLength;                                   // need uint16_t but little Endian !!!!!!!!!!!!!!!!!!!!
+    uint16_t        wLength;
 } USBLIB_SetupPacket;
 //---------------------------
 
@@ -243,6 +243,7 @@ typedef struct
 #define EP_TRANSFER_TYPE_INTERRUPT                0x03
 
 //GET_STATUS request (Figure 9-4 USB 2.0 specification)
+#define DEVICE_STATUS_MASK          0x03
 #define STATUS_SELF_POWERED         0x01
 #define STATUS_REMOTE_WAKEUP        0x02
 

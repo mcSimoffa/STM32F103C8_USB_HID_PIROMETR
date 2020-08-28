@@ -98,3 +98,40 @@ char *stradd (char * destptr, char * srcptr )
   while (*(srcptr++)!=0x00);
   return (--destptr);
 }
+
+/* ***********************************************************
+It convert Hex array to string representation. Version 1 with pointer of pointer
+pInHex - pointer to source array location
+ppOut - pionter to pointer to head of destination array location
+no return value, but *ppOut have move to new head
+*********************************************************** */
+ void printHexMempp(void *pInHex,char **ppOut, uint8_t len)
+ {
+   uint8_t *ptr;
+   ptr = pInHex;
+  for (uint8_t i=0;i<len;i++)
+  {
+   *ppOut = itoa((uint32_t) *ptr++ ,*ppOut,16,0); 
+   **ppOut = ' ';
+   (*ppOut)++;
+  }
+  **ppOut = 0x00;
+ }
+
+/* ***********************************************************
+It convert Hex array to string representation. Version 2 with single pointer
+pInHex - pointer to source array location
+ppOut - pionter to head of destination array location
+return pointer to new head
+*********************************************************** */
+ char *printHexMem(void *pInHex,char *pOut, uint8_t len)
+ {
+  uint8_t *ptr = pInHex;
+  for (uint8_t i=0;i<len;i++)
+  {
+   pOut = itoa((uint32_t) *ptr++ ,pOut,16,0); 
+   *pOut++ = ' ';
+  }
+  *pOut = 0x00;
+  return (pOut);
+ }
