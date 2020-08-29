@@ -1,3 +1,10 @@
+/*
+TODO
+
+
+
+
+*/
 #include "USBHID.h"
 #include "HidSensorSpec.h"
 #include <stdlib.h>
@@ -5,8 +12,8 @@
 #include "additional_func.h"
 #include "oringbuf.h"
 
-#define DEVICE_VENDOR_ID        0x25AE
-#define DEVICE_PRODUCT_ID       0x24AB
+#define DEVICE_VENDOR_ID        0x1209
+#define DEVICE_PRODUCT_ID       0x0001
 #define EPCOUNT                 2
 #define LAST_NUM_STRING_DESCR   2
 
@@ -50,10 +57,10 @@ const Typedef_USB_DEVICE_DESCRIPTOR sDeviceDescriptor={
 .bDeviceSubClass = 0,
 .bDeviceProtocol = 0,
 .bMaxPacketSize0 = 8,
-.idVendor_L = LOBYTE(0x0483),
-.idVendor_H = HIBYTE(0x0483),
-.idProduct_L = LOBYTE(0x5711),
-.idProduct_H = HIBYTE(0x5711),
+.idVendor_L = LOBYTE(DEVICE_VENDOR_ID),
+.idVendor_H = HIBYTE(DEVICE_VENDOR_ID),
+.idProduct_L = LOBYTE(DEVICE_PRODUCT_ID),
+.idProduct_H = HIBYTE(DEVICE_PRODUCT_ID),
 .bcdDevice_L = 10,
 .bcdDevice_H = 1,
 .iManufacturer = 1,
@@ -91,7 +98,7 @@ const uint8_t aConfDescriptor[] =
         0x00,               //bCountryCode (not Localisation)
         0x01,               //bNumDescriptors (follow 1 report descriptor)
         USB_REPORT_DESC_TYPE,   //bDescriptorType (report)
-        38,0x00,           //wDescriptorLength (report descriptor lenth)
+        36,0x00,  //wDescriptorLength (report descriptor lenth)
  
 // ENDPOINT descriptor   (Table 9-13 USB specification) 
         0x07,                       //bLength:
@@ -136,29 +143,25 @@ uint8_t* StringDescriptors[3]=
   (uint8_t*) &aStringDescriptors2
 };
 
-static const uint8_t HID_Sensor_ReportDesc[38] =
+static const uint8_t HID_Sensor_ReportDesc[36] =
 {
-    0x06, 0x00, 0xff,            // USAGE_PAGE (Generic Desktop)
-    0x09, 0x01,                  // USAGE (Vendor Usage 1)
-    
-    // System Parameters
-    0xa1, 0x01,                  // COLLECTION (Application)
-    0x85, 0x01,                  // REPORT_ID (1)
-    0x09, 0x01,                  // USAGE (Vendor Usage 1)
-    0x15, 0x00,                  // LOGICAL_MINIMUM (0)
-    0x25, 0x01,                  // LOGICAL_MAXIMUM (1)
-    0x75, 0x08,                  // REPORT_SIZE (8)
-    0x95, 1,                     // REPORT_COUNT (1)
-    0xb1, 0x82,                  // FEATURE (Data,Var,Abs,Vol)
-    0x85, 0x01,                  // REPORT_ID (1)
-    0x09, 0x01,                  // USAGE (Vendor Usage 1)
-    0x91, 0x82,                  // OUTPUT (Data,Var,Abs,Vol)
-    0x85, 0x02,                  // REPORT_ID (4)
-    0x09, 0x02,                  // USAGE (Vendor Usage 4)
-    0x75, 0x08,                  // REPORT_SIZE (8)
-    0x95, 1,                     // REPORT_COUNT (1)
-    0x81, 0x82,                  // INPUT (Data,Var,Abs,Vol)
-    0xC0 /* END_COLLECTION */
+  HID_USAGE_PAGE_SENSOR,              //0x05,0x20
+  HID_USAGE_SENSOR_TYPE_COLLECTION,   //0x09,0x01
+  HID_COLLECTION(Application),        //0xA1,0x01
+    HID_REPORT_ID(1),                   //0x85,0x01
+    HID_USAGE_PAGE_SENSOR,              //0x05,0x20
+    HID_USAGE_SENSOR_DATA_ENVIRONMENTAL_TEMPERATURE,  //0x0A,0x34,0x04
+    HID_COLLECTION(Physical),           //0xA1,0x00
+      HID_USAGE_PAGE_SENSOR,            //0x05,0x20
+      HID_USAGE_SENSOR_DATA_ENVIRONMENTAL_TEMPERATURE, //0x0A,0x34,0x04
+      HID_LOGICAL_MIN_16(0x01,0x80),    //0x16,a,b        
+      HID_LOGICAL_MAX_16(0xFF,0x7F),    //0x26,a,b         
+      HID_REPORT_SIZE(16),    //0x75,16
+      HID_REPORT_COUNT(1),    //0x95,1                            
+      HID_UNIT_EXPONENT(0x0E), //0x55,0x0E        2 scale default unit “Celsius” to provide 2 digits past the decimal point
+      HID_INPUT(Data_Var_Abs),  //0x81,a
+    HID_END_COLLECTION,        //1    
+  HID_END_COLLECTION          //1
 }; 
 
 //******************************************************************************
@@ -473,12 +476,18 @@ void USB_EPHandler(uint16_t Status)
           }//switch (SetupPacket->bRequest) 
         }//Request type Class ?
       }//Setup packet
+      else
+      {
+      #ifdef SWOLOG
+        pFloat = printHexMem(EpData[EPn].pRX_BUFF,pFloat,EpData[EPn].lRX);
+      #endif  
+      }
     }//Control endpoint 
     else 
       { // Got data from another EP
         asm("nop");  // Call user function
       #ifdef SWOLOG
-        pFloat = stradd (pFloat,"\r\nGot Data");
+        pFloat = stradd (pFloat,"\r\nGot Data ");
         pFloat = printHexMem(EpData[EPn].pRX_BUFF,pFloat,EpData[EPn].lRX);
       #endif         
         USBLIB_SendData(EPn, 0, 0);                   //nujno li podtverjdat prinatie dannie
