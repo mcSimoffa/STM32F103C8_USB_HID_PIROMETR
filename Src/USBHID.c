@@ -15,7 +15,7 @@ TODO
 #define DEVICE_VENDOR_ID        0x1209
 #define DEVICE_PRODUCT_ID       0x0001
 #define EPCOUNT                 2
-#define LAST_NUM_STRING_DESCR   2
+#define LAST_NUM_STRING_DESCR   3
 
 __no_init volatile USB_BDT BDTable[EPCOUNT] @ USB_PMAADDR ; //Buffer Description Table
 
@@ -35,6 +35,8 @@ USBLIB_SetupPacket   *SetupPacket;
 volatile uint8_t      DeviceAddress = 0;
 uint8_t reportPeriod = 0;
 uint16_t DeviceStatus = (~STATUS_SELF_POWERED & ~STATUS_REMOTE_WAKEUP) & DEVICE_STATUS_MASK;
+uint8_t readyToSend=0;
+uint8_t userEPn;
 
 /*const Typedef_USB_DEVICE_QUALIFIER_DESCRIPTOR sQualDescriptor={
 .bLength = 10, 
@@ -61,11 +63,11 @@ const Typedef_USB_DEVICE_DESCRIPTOR sDeviceDescriptor={
 .idVendor_H = HIBYTE(DEVICE_VENDOR_ID),
 .idProduct_L = LOBYTE(DEVICE_PRODUCT_ID),
 .idProduct_H = HIBYTE(DEVICE_PRODUCT_ID),
-.bcdDevice_L = 10,
-.bcdDevice_H = 1,
+.bcdDevice_L = 0,
+.bcdDevice_H = 2,
 .iManufacturer = 1,
-.iProduct = LAST_NUM_STRING_DESCR,
-.iSerialNumber = 0,
+.iProduct = 2,
+.iSerialNumber = LAST_NUM_STRING_DESCR,
 .bNumConfigurations =1};
 
 const uint8_t aConfDescriptor[] = 
@@ -98,7 +100,7 @@ const uint8_t aConfDescriptor[] =
         0x00,               //bCountryCode (not Localisation)
         0x01,               //bNumDescriptors (follow 1 report descriptor)
         USB_REPORT_DESC_TYPE,   //bDescriptorType (report)
-        36,0x00,  //wDescriptorLength (report descriptor lenth)
+        34,0x00,  //wDescriptorLength (report descriptor lenth)
  
 // ENDPOINT descriptor   (Table 9-13 USB specification) 
         0x07,                       //bLength:
@@ -133,22 +135,30 @@ const uint8_t aStringDescriptors2[]=
 {
     20,                 // bLength
     USB_STR_DESC_TYPE,  //bDescriptorType
-    'P',0, 'i',0, 'r',0, 'o',0, 'm',0, 'e',0, 't',0, 'e',0, 'r',0, //Product
+    'P',0, 'i',0, 'r',0, 'o',0, 'm',0, 'e',0, 't',0, 'e',0, 'r',0 //Product
 };
 
-uint8_t* StringDescriptors[3]=
+const uint8_t aStringDescriptors3[]=
+{
+    18,                 // bLength
+    USB_STR_DESC_TYPE,  //bDescriptorType
+    '3',0, '0',0, '0',0, '8',0, '2',0, '0',0, '2',0, '0',0,  //Product
+};
+
+uint8_t* StringDescriptors[LAST_NUM_STRING_DESCR+1]=
 {
   (uint8_t*) &aStringDescriptors0,
   (uint8_t*) &aStringDescriptors1,
-  (uint8_t*) &aStringDescriptors2
+  (uint8_t*) &aStringDescriptors2,
+  (uint8_t*) &aStringDescriptors3
 };
 
-static const uint8_t HID_Sensor_ReportDesc[36] =
+static const uint8_t HID_Sensor_ReportDesc[34] =
 {
   HID_USAGE_PAGE_SENSOR,              //0x05,0x20
   HID_USAGE_SENSOR_TYPE_COLLECTION,   //0x09,0x01
   HID_COLLECTION(Application),        //0xA1,0x01
-    HID_REPORT_ID(1),                   //0x85,0x01
+    //HID_REPORT_ID(1),                   //0x85,0x01
     HID_USAGE_PAGE_SENSOR,              //0x05,0x20
     HID_USAGE_SENSOR_DATA_ENVIRONMENTAL_TEMPERATURE,  //0x0A,0x34,0x04
     HID_COLLECTION(Physical),           //0xA1,0x00
@@ -191,7 +201,7 @@ void USB_Reset(void)
         }
       USB->EPR[i] = (EpData[i].Number | EpData[i].Type | RX_VALID | TX_NAK);
       }
-
+    
     for (uint8_t i = EPCOUNT; i < 8; i++) //inactive endpoints
         USB->EPR[i] = i | RX_DISABLE | TX_DISABLE;
 
@@ -294,6 +304,16 @@ void USB_LP_CAN1_RX0_IRQHandler()
       USB->ISTR &= ~USB_ISTR_SOF;
       if ((USB->EPR[0] & EP_STAT_TX) == TX_STALL)
         USBLIB_setStatTx(0, TX_NAK);
+      if (readyToSend == 1)
+      {
+        readyToSend = 0;       
+        if (EpData[userEPn].lTX > 0)
+            USBLIB_EPBuf2Pma(userEPn);
+          else
+            BDTable[userEPn].TX_Count = 0;
+       USBLIB_setStatTx(1, TX_VALID);
+       putlog();
+      }
       return;
     }
     
@@ -669,6 +689,13 @@ void USBLIB_setStatRx(uint8_t EPn, uint16_t Stat)
   USB->EPR[EPn]         = (val ^ (Stat & EP_STAT_RX)) & (EP_MASK | EP_STAT_RX);
 }
 
+void USB_sendReport(uint8_t EPn, uint16_t *Data, uint16_t Length)
+{                                                                                         
+  EpData[EPn].lTX = Length;
+  EpData[EPn].pTX_BUFF = Data;
+  userEPn=EPn;
+  readyToSend=1;
+}
 #ifdef SWOLOG
 /* ****************************************************************************
 SWO logging for SETUP packet type to SWO by ITM_SendChar

@@ -4,6 +4,8 @@
 #include "Systick.h"
 #include "additional_func.h"
 #include "oringbuf.h"
+#include "USBHID.h"
+
 //for SWO logging activate SWOLOG in Options\C++ compiler\Defined Symbol
 
 #define SYSTICK_DIVIDER 72000
@@ -18,6 +20,8 @@
    uint8_t toSWO;
 #endif
 
+extern Typedef_SystickCallback systickSheduler;
+void Sender();
 void main()
 {
   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN //GPIO C enable
@@ -57,6 +61,8 @@ void main()
   while (SysTick_Config(SYSTICK_DIVIDER)==1)	
     asm("nop");	 //reason - bad divider 
   NVIC_EnableIRQ(SysTick_IRQn);
+  systickSheduler.interval = 100;
+  systickSheduler.body = Sender;
   
   //Turn ON the takt core couner
   CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;// Enable DWT
@@ -77,10 +83,19 @@ void main()
   NVIC_EnableIRQ(USBWakeUp_IRQn);
   //msDelay(4000);
   //GPIO_SET(GPIOA,1<<USB_ENABLE); //Disable USB pullup resistor 1k5
+  
   while (1)
   {
   if(Oringbuf_Get(&toSWO,1))
     ITM_SendChar((uint32_t) toSWO);
+  //if GetTick()
   }
 }
 
+void Sender()
+{
+ static uint16_t value=0; 
+(GPIO_READ_OUTPUT(GPIOC,1<<ONBOARD_LED)==0) ?  GPIO_SET(GPIOC,1<<ONBOARD_LED):GPIO_RESET(GPIOC,1<<ONBOARD_LED);
+ USB_sendReport(1,&value,2);
+ value++;
+}

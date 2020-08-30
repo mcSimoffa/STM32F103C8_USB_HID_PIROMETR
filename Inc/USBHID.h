@@ -11,4 +11,5 @@
  void USBLIB_EPBuf2Pma(uint8_t EPn);
  void USBLIB_setStatTx(uint8_t EPn, uint16_t Stat);
  void USBLIB_setStatRx(uint8_t EPn, uint16_t Stat);
+ void USB_sendReport(uint8_t EPn, uint16_t *Data, uint16_t Length);
 #endif //_USBHID_H_
