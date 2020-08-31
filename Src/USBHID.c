@@ -1,5 +1,7 @@
-/*
-TODO
+/* ******    TODO    *********
+sdelat state mashine dlay SETs
+sdelat callbacki dlya SETs: SET REPORT
+sdelat otvety 0,0,0 nd SETs
 
 */
 #include "USBHID.h"
@@ -18,11 +20,12 @@ __no_init volatile USB_BDT BDTable[EPCOUNT] @ USB_PMAADDR ; //Buffer Description
   char debugBuf[512];
   char *pFloat;
 #endif
-  
+
+void (*USB_getReport_callback)(void);  
 USB_EPinfo EpData[EPCOUNT] =
 {
-  {.Number=0, .Type=EP_CONTROL,     .TX_Max=8, .RX_Max=8, .pTX_BUFF=0, .lTX=0, .pRX_BUFF=0, .lRX=0, .SendStatus=EP_SEND_READY},
-  {.Number=1, .Type=EP_INTERRUPT,   .TX_Max=8, .RX_Max=8, .pTX_BUFF=0, .lTX=0, .pRX_BUFF=0, .lRX=0, .SendStatus=EP_SEND_READY}
+  {.Number=0, .Type=EP_CONTROL,     .TX_Max=16, .RX_Max=16, .pTX_BUFF=0, .lTX=0, .pRX_BUFF=0, .lRX=0, .SendStatus=EP_SEND_READY},
+  {.Number=1, .Type=EP_INTERRUPT,   .TX_Max=16, .RX_Max=16, .pTX_BUFF=0, .lTX=0, .pRX_BUFF=0, .lRX=0, .SendStatus=EP_SEND_READY}
 };
 USB_SetupPacket   *SetupPacket;
 uint8_t  DeviceAddress = 0;
@@ -325,6 +328,7 @@ void USB_EPHandler(uint16_t Status)
             #ifdef SWOLOG
               pFloat = stradd (pFloat,"Get Report");
             #endif
+            USB_getReport_callback();
             break;
                                   
             case USB_HID_SET_REPORT:
@@ -441,8 +445,11 @@ void USBLIB_Pma2EPBuf(uint8_t EPn)
   uint16_t *Distination = (uint16_t *)EpData[EPn].pRX_BUFF;
   uint8_t   Count = EpData[EPn].lRX = (BDTable[EPn].RX_Count & BDT_COUNTn_RX_Msk);
 #ifdef SWOLOG    
-  pFloat = stradd (pFloat, "\r\nPMA -> Buffer ");
+  pFloat = stradd (pFloat, "\r\nPMA[");
+  pFloat = itoa(EPn ,pFloat,10,0);
+  pFloat = stradd (pFloat, "]->Buffer ");
   pFloat = itoa(Count ,pFloat,10,0);
+  pFloat = stradd (pFloat, " bytes ");
 #endif  
   for (uint8_t i = 0; i < Count; i++)
   {
@@ -462,8 +469,11 @@ void USBLIB_EPBuf2Pma(uint8_t EPn)
   BDTable[EPn].TX_Count = Count;
   Distination = (uint32_t *)(USB_PMAADDR + BDTable[EPn].TX_Address * 2);
 #ifdef SWOLOG
-  pFloat = stradd (pFloat, "\r\nBuffer -> PMA ");
+  pFloat = stradd (pFloat, "\r\nBuffer->PMA[");
+  pFloat = itoa(EPn ,pFloat,10,0);
+  pFloat = stradd (pFloat, "] ");
   pFloat = itoa(Count ,pFloat,10,0);
+  pFloat = stradd (pFloat, " bytes ");
 #endif
   for (uint8_t i = 0; i < (Count + 1) / 2; i++) 
   {

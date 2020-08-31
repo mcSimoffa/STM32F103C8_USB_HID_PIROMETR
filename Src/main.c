@@ -21,7 +21,17 @@
 #endif
 
 extern Typedef_SystickCallback systickSheduler;
+extern void (*USB_getReport_callback)(void);
 void Sender();
+void GetReportRespone();
+
+struct _feature
+  {
+    uint32_t  word1;
+    uint16_t  word2;
+    uint16_t  word3;
+  } feature={1,2,3};
+
 void main()
 {
   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN //GPIO C enable
@@ -61,7 +71,7 @@ void main()
   while (SysTick_Config(SYSTICK_DIVIDER)==1)	
     asm("nop");	 //reason - bad divider 
   NVIC_EnableIRQ(SysTick_IRQn);
-  systickSheduler.interval = 100;
+  systickSheduler.interval = 100000;
   systickSheduler.body = Sender;
   
   //Turn ON the takt core couner
@@ -70,6 +80,7 @@ void main()
   DWT->CYCCNT = 0; //start value = 0
   
  //USB initialize
+  USB_getReport_callback = GetReportRespone;
   GPIO_RESET(GPIOA,1<<USB_ENABLE); //Enable USB pullup resistor 1k5
   //RCC->CFGR |= RCC_CFGR_USBPRE; //not divide PLL clock for USB 48MHz
   RCC->APB1ENR |= RCC_APB1ENR_USBEN; //clocking USB Enable
@@ -98,4 +109,9 @@ void Sender()
 (GPIO_READ_OUTPUT(GPIOC,1<<ONBOARD_LED)==0) ?  GPIO_SET(GPIOC,1<<ONBOARD_LED):GPIO_RESET(GPIOC,1<<ONBOARD_LED);
  USB_sendReport(1,&value,2);
  value++;
+}
+
+void GetReportRespone()
+{  
+  USBLIB_SendData(0,(uint16_t *)&feature,8); 
 }

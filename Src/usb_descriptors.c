@@ -26,7 +26,7 @@ const Typedef_USB_DEVICE_DESCRIPTOR sDeviceDescriptor={
 .bDeviceClass = USB_CLASS_IN_INTERFACE_DESCRIPTOR,
 .bDeviceSubClass = 0,
 .bDeviceProtocol = 0,
-.bMaxPacketSize0 = 8,
+.bMaxPacketSize0 = 16,
 .idVendor_L = LOBYTE(DEVICE_VENDOR_ID),
 .idVendor_H = HIBYTE(DEVICE_VENDOR_ID),
 .idProduct_L = LOBYTE(DEVICE_PRODUCT_ID),
@@ -68,21 +68,21 @@ const uint8_t aConfDescriptor[] =
         0x00,               //bCountryCode (not Localisation)
         0x01,               //bNumDescriptors (follow 1 report descriptor)
         USB_REPORT_DESC_TYPE,   //bDescriptorType (report)
-        34,0x00,  //wDescriptorLength (report descriptor lenth)
+        184,0x00,  //wDescriptorLength (report descriptor lenth)
  
 // ENDPOINT descriptor   (Table 9-13 USB specification) 
         0x07,                       //bLength:
         USB_EP_DESC_TYPE,           //bDescriptorType
         IN_ENDPOINT | 0x01,         //bEndpointAddress(ep#1 direction=IN)
         EP_TRANSFER_TYPE_INTERRUPT, // bmAttributes
-        0x08, 0x00,                 // wMaxPacketSize: 8 Byte max 
+        0x10, 0x00,                 // wMaxPacketSize: 16 Byte max 
         0x20,                       // bInterval: Polling Interval (32 ms)   
           
         0x07,                       //bLength:
         USB_EP_DESC_TYPE,           //bDescriptorType
         OUT_ENDPOINT | 0x01,        //bEndpointAddress(ep#1 direction=IN)
         EP_TRANSFER_TYPE_INTERRUPT, // bmAttributes
-        0x08, 0x00,                 // wMaxPacketSize: 8 Byte max 
+        0x10, 0x00,                 // wMaxPacketSize: 16 Byte max 
         0x20                        // bInterval: Polling Interval (32 ms) 
     };
 
@@ -113,7 +113,95 @@ const uint8_t aStringDescriptors3[]=
     '3',0, '0',0, '0',0, '8',0, '2',0, '0',0, '2',0, '0',0,  //Product
 };
 
-static const uint8_t HID_Sensor_ReportDesc[34] =
+static const uint8_t HID_Sensor_ReportDesc[184] =
+{
+  HID_USAGE_PAGE_SENSOR,
+  HID_USAGE_SENSOR_TYPE_ENVIRONMENTAL_TEMPERATURE,
+  HID_COLLECTION(Physical),
+
+  //feature reports (xmit/receive)
+  HID_USAGE_PAGE_SENSOR,
+
+  HID_USAGE_SENSOR_PROPERTY_REPORT_INTERVAL,
+  HID_LOGICAL_MIN_8(0),
+  HID_LOGICAL_MAX_32(0xFF,0xFF,0xFF,0xFF),
+  HID_REPORT_SIZE(32),
+  HID_REPORT_COUNT(1),
+  HID_UNIT_EXPONENT(0),
+  HID_FEATURE(Data_Var_Abs),
+
+  HID_USAGE_SENSOR_DATA(HID_USAGE_SENSOR_DATA_ENVIRONMENTAL_TEMPERATURE,HID_USAGE_SENSOR_DATA_MOD_MAX),
+  HID_LOGICAL_MIN_16(0x01,0x80), // LOGICAL_MINIMUM (-32767)
+  HID_LOGICAL_MAX_16(0xFF,0x7F), // LOGICAL_MAXIMUM (32767)
+  HID_REPORT_SIZE(16),
+  HID_REPORT_COUNT(1),
+  HID_UNIT_EXPONENT(0x0E), // scale default unit “Celsius” to provide 2 digits past the decimal point
+  HID_FEATURE(Data_Var_Abs),
+
+  HID_USAGE_SENSOR_DATA(HID_USAGE_SENSOR_DATA_ENVIRONMENTAL_TEMPERATURE,HID_USAGE_SENSOR_DATA_MOD_MIN),
+  HID_LOGICAL_MIN_16(0x01,0x80), // LOGICAL_MINIMUM (-32767)
+  HID_LOGICAL_MAX_16(0xFF,0x7F), // LOGICAL_MAXIMUM (32767)
+  HID_REPORT_SIZE(16),
+  HID_REPORT_COUNT(1),
+  HID_UNIT_EXPONENT(0x0E), // scale default unit “Celsius” to provide 2 digits past the decimal point
+  HID_FEATURE(Data_Var_Abs),
+
+  //input reports (transmit)
+  HID_USAGE_PAGE_SENSOR,
+
+  HID_USAGE_SENSOR_STATE,
+  HID_LOGICAL_MIN_8(0),
+  HID_LOGICAL_MAX_8(6),
+  HID_REPORT_SIZE(8),
+  HID_REPORT_COUNT(1),
+  HID_COLLECTION(Logical),
+  HID_USAGE_SENSOR_STATE_UNKNOWN,
+  HID_USAGE_SENSOR_STATE_READY,
+  HID_USAGE_SENSOR_STATE_NOT_AVAILABLE,
+  HID_USAGE_SENSOR_STATE_NO_DATA,
+  HID_USAGE_SENSOR_STATE_INITIALIZING,
+  HID_USAGE_SENSOR_STATE_ACCESS_DENIED,
+  HID_USAGE_SENSOR_STATE_ERROR,
+  HID_INPUT(Data_Arr_Abs),
+  HID_END_COLLECTION,
+
+  HID_USAGE_SENSOR_EVENT,
+  HID_LOGICAL_MIN_8(0),
+  HID_LOGICAL_MAX_8(16),
+  HID_REPORT_SIZE(8),
+  HID_REPORT_COUNT(1),
+  HID_COLLECTION(Logical),
+  HID_USAGE_SENSOR_EVENT_UNKNOWN,
+  HID_USAGE_SENSOR_EVENT_STATE_CHANGED,
+  HID_USAGE_SENSOR_EVENT_PROPERTY_CHANGED,
+  HID_USAGE_SENSOR_EVENT_DATA_UPDATED,
+  HID_USAGE_SENSOR_EVENT_POLL_RESPONSE,
+  HID_USAGE_SENSOR_EVENT_CHANGE_SENSITIVITY,
+  HID_USAGE_SENSOR_EVENT_MAX_REACHED,
+  HID_USAGE_SENSOR_EVENT_MIN_REACHED,
+  HID_USAGE_SENSOR_EVENT_HIGH_THRESHOLD_CROSS_UPWARD,
+  HID_USAGE_SENSOR_EVENT_HIGH_THRESHOLD_CROSS_DOWNWARD,
+  HID_USAGE_SENSOR_EVENT_LOW_THRESHOLD_CROSS_UPWARD,
+  HID_USAGE_SENSOR_EVENT_LOW_THRESHOLD_CROSS_DOWNWARD,
+  HID_USAGE_SENSOR_EVENT_ZERO_THRESHOLD_CROSS_UPWARD,
+  HID_USAGE_SENSOR_EVENT_ZERO_THRESHOLD_CROSS_DOWNWARD,
+  HID_USAGE_SENSOR_EVENT_PERIOD_EXCEEDED,
+  HID_USAGE_SENSOR_EVENT_FREQUENCY_EXCEEDED,
+  HID_USAGE_SENSOR_EVENT_COMPLEX_TRIGGER,
+  HID_INPUT(Data_Arr_Abs),
+  HID_END_COLLECTION,
+
+  HID_USAGE_SENSOR_DATA_ENVIRONMENTAL_TEMPERATURE,
+  HID_LOGICAL_MIN_16(0x01,0x80), // LOGICAL_MINIMUM (-32767)
+  HID_LOGICAL_MAX_16(0xFF,0x7F), // LOGICAL_MAXIMUM (32767)
+  HID_REPORT_SIZE(16),
+  HID_REPORT_COUNT(1),
+  HID_UNIT_EXPONENT(0x0E), // scale default unit “Celsius” to provide 2 digits past the decimal point
+  HID_INPUT(Data_Var_Abs),
+  HID_END_COLLECTION
+};
+
+/*static const uint8_t HID_Sensor_ReportDesc[34] =
 {
   HID_USAGE_PAGE_SENSOR,              //0x05,0x20
   HID_USAGE_SENSOR_TYPE_COLLECTION,   //0x09,0x01
@@ -132,7 +220,7 @@ static const uint8_t HID_Sensor_ReportDesc[34] =
       HID_INPUT(Data_Var_Abs),  //0x81,a
     HID_END_COLLECTION,        //1    
   HID_END_COLLECTION          //1
-}; 
+}; */
 
 uint8_t* StringDescriptors[LAST_NUM_STRING_DESCR+1]=
 {
