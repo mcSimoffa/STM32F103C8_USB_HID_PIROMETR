@@ -1,8 +1,8 @@
 #include "Systick.h"
 
 Typedef_SystickCallback systickSheduler={
-.interval = 0,
-.body = 0
+.interval = 0,    //interval in msec
+.body = 0         //CallBack routine Executed every interval
 };
 volatile uint32_t SysTickCounter;
 uint32_t ticks=0;
@@ -30,6 +30,7 @@ void msDelay(uint32_t delay)
   while (SysTickCounter>0);
    asm("nop"); 
 }
+
 uint32_t GetTick()
 {
  return(ticks);

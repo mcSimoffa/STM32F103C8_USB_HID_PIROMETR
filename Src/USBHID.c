@@ -1,26 +1,19 @@
 /*
 TODO
 
-
-
-
 */
 #include "USBHID.h"
-#include "HidSensorSpec.h"
+#include "usb_descriptor.h"
 #include <stdlib.h>
 #include "Systick.h"
 #include "additional_func.h"
 #include "oringbuf.h"
 
-#define DEVICE_VENDOR_ID        0x1209
-#define DEVICE_PRODUCT_ID       0x0001
-#define EPCOUNT                 2
-#define LAST_NUM_STRING_DESCR   3
-
+#define EPCOUNT   2
 __no_init volatile USB_BDT BDTable[EPCOUNT] @ USB_PMAADDR ; //Buffer Description Table
 
 #ifdef SWOLOG
-  void loggingSetupPacket(USBLIB_SetupPacket *pSetup);
+  void loggingSetupPacket(USB_SetupPacket *pSetup);
   void putlog();
   char debugBuf[512];
   char *pFloat;
@@ -28,151 +21,17 @@ __no_init volatile USB_BDT BDTable[EPCOUNT] @ USB_PMAADDR ; //Buffer Description
   
 USB_EPinfo EpData[EPCOUNT] =
 {
-  {.Number=0, .Type=EP_CONTROL,     .TX_Max=8, .RX_Max=8, .pTX_BUFF=0, .lTX=0, .pRX_BUFF=0, .lRX=0},
-  {.Number=1, .Type=EP_INTERRUPT,   .TX_Max=8, .RX_Max=8, .pTX_BUFF=0, .lTX=0, .pRX_BUFF=0, .lRX=0}
+  {.Number=0, .Type=EP_CONTROL,     .TX_Max=8, .RX_Max=8, .pTX_BUFF=0, .lTX=0, .pRX_BUFF=0, .lRX=0, .SendStatus=EP_SEND_READY},
+  {.Number=1, .Type=EP_INTERRUPT,   .TX_Max=8, .RX_Max=8, .pTX_BUFF=0, .lTX=0, .pRX_BUFF=0, .lRX=0, .SendStatus=EP_SEND_READY}
 };
-USBLIB_SetupPacket   *SetupPacket;
+USB_SetupPacket   *SetupPacket;
 volatile uint8_t      DeviceAddress = 0;
 uint8_t reportPeriod = 0;
-uint16_t DeviceStatus = (~STATUS_SELF_POWERED & ~STATUS_REMOTE_WAKEUP) & DEVICE_STATUS_MASK;
+uint16_t DeviceStatus = STATUS_BUS_POWERED;
 uint8_t readyToSend=0;
 uint8_t userEPn;
 
-/*const Typedef_USB_DEVICE_QUALIFIER_DESCRIPTOR sQualDescriptor={
-.bLength = 10, 
-.bDescriptorType = USB_DEVICE_QR_DESC_TYPE,
-.bcdUSB_L = 0,
-.bcdUSB_H = 2,
-.bDeviceClass = USB_CLASS_IN_INTERFACE_DESCRIPTOR,
-.bDeviceSubClass = 0,
-.bDeviceProtocol = 0,
-.bMaxPacketSize0 = 8,
-.bNumConfigurations =0,
-.bReservedFuture=0};*/
 
-const Typedef_USB_DEVICE_DESCRIPTOR sDeviceDescriptor={
-.bLength = 18, 
-.bDescriptorType = USB_DEVICE_DESC_TYPE,
-.bcdUSB_L = 0,
-.bcdUSB_H = 2,
-.bDeviceClass = USB_CLASS_IN_INTERFACE_DESCRIPTOR,
-.bDeviceSubClass = 0,
-.bDeviceProtocol = 0,
-.bMaxPacketSize0 = 8,
-.idVendor_L = LOBYTE(DEVICE_VENDOR_ID),
-.idVendor_H = HIBYTE(DEVICE_VENDOR_ID),
-.idProduct_L = LOBYTE(DEVICE_PRODUCT_ID),
-.idProduct_H = HIBYTE(DEVICE_PRODUCT_ID),
-.bcdDevice_L = 0,
-.bcdDevice_H = 2,
-.iManufacturer = 1,
-.iProduct = 2,
-.iSerialNumber = LAST_NUM_STRING_DESCR,
-.bNumConfigurations =1};
-
-const uint8_t aConfDescriptor[] = 
-    {
-// CONFIGURATION Descriptor  (Table 9-10 USB specification)
-        0x09,               //bLength: Configuration Descriptor size
-        USB_CFG_DESC_TYPE,  // bDescriptorType: Configuration
-        41, 0,              // wTotalLength low & high  sizeof (configuration + interface + endpoint + HID) 34bytes
-        0x01,               // bNumInterfaces: 1 interface
-        0x01,               // bConfigurationValue: Configuration value
-        0x00,               // iConfiguration: Index of string descriptor describing the configuration
-        BMATTRIBUTES_MASK,  // bmAttributes - Bus powered
-        0x32,               // MaxPower 100 mA
-        
-// INTERFACE descriptor (Table 9-12 USB specification)
-        0x09,               //bLength
-        USB_IFACE_DESC_TYPE,//bDescriptorType: Interface
-        0x00,               //bInterfaceNumber
-        0x00,               //bAlternateSetting
-        0x02,               //bNumEndpoints
-        USB_CLASS_HID,      //bInterfaceClass
-        0x00,               //bInterfaceSubClass (0=not bootable or 1=bootable)
-        0x00,               //bInterfaceProtocol (if not bootable than always=0)
-        0x00,               //iInterface (no string Interface descriptor)
-        
-// HID descriptor (6.2.1 Device Class Definition for Human Interface Devices (HID) Version 1.11 )
-        0x09,               //bLength
-        USB_HID_DESC_TYPE,  //bDescriptorType: HID
-        0x11,  0x01,        //bBCDHID low & high (ver 1.11)   
-        0x00,               //bCountryCode (not Localisation)
-        0x01,               //bNumDescriptors (follow 1 report descriptor)
-        USB_REPORT_DESC_TYPE,   //bDescriptorType (report)
-        34,0x00,  //wDescriptorLength (report descriptor lenth)
- 
-// ENDPOINT descriptor   (Table 9-13 USB specification) 
-        0x07,                       //bLength:
-        USB_EP_DESC_TYPE,           //bDescriptorType
-        IN_ENDPOINT | 0x01,         //bEndpointAddress(ep#1 direction=IN)
-        EP_TRANSFER_TYPE_INTERRUPT, // bmAttributes
-        0x08, 0x00,                 // wMaxPacketSize: 8 Byte max 
-        0x20,                       // bInterval: Polling Interval (32 ms)   
-          
-        0x07,                       //bLength:
-        USB_EP_DESC_TYPE,           //bDescriptorType
-        OUT_ENDPOINT | 0x01,        //bEndpointAddress(ep#1 direction=IN)
-        EP_TRANSFER_TYPE_INTERRUPT, // bmAttributes
-        0x08, 0x00,                 // wMaxPacketSize: 8 Byte max 
-        0x20                        // bInterval: Polling Interval (32 ms) 
-    };
-
-const uint8_t aStringDescriptors0[]=
-{
-    0x04,               // bLength
-    (uint8_t)USB_STR_DESC_TYPE,  //bDescriptorType
-    0x09,0x04               //LANG_ID English
-};
-const uint8_t aStringDescriptors1[]=
-{
-    36,                 // bLength
-    USB_STR_DESC_TYPE,  //bDescriptorType
-    'M',0, 'a',0, 'x',0, 'i',0, 'm',0, 'o',0, ' ',0, 'T',0, 'e',0, 'c',0, 'h',0, 'n',0, 'o',0, 'l',0, 'o',0, 'g',0, 'y',0   //Manufactured
-};
-
-const uint8_t aStringDescriptors2[]=
-{
-    20,                 // bLength
-    USB_STR_DESC_TYPE,  //bDescriptorType
-    'P',0, 'i',0, 'r',0, 'o',0, 'm',0, 'e',0, 't',0, 'e',0, 'r',0 //Product
-};
-
-const uint8_t aStringDescriptors3[]=
-{
-    18,                 // bLength
-    USB_STR_DESC_TYPE,  //bDescriptorType
-    '3',0, '0',0, '0',0, '8',0, '2',0, '0',0, '2',0, '0',0,  //Product
-};
-
-uint8_t* StringDescriptors[LAST_NUM_STRING_DESCR+1]=
-{
-  (uint8_t*) &aStringDescriptors0,
-  (uint8_t*) &aStringDescriptors1,
-  (uint8_t*) &aStringDescriptors2,
-  (uint8_t*) &aStringDescriptors3
-};
-
-static const uint8_t HID_Sensor_ReportDesc[34] =
-{
-  HID_USAGE_PAGE_SENSOR,              //0x05,0x20
-  HID_USAGE_SENSOR_TYPE_COLLECTION,   //0x09,0x01
-  HID_COLLECTION(Application),        //0xA1,0x01
-    //HID_REPORT_ID(1),                   //0x85,0x01
-    HID_USAGE_PAGE_SENSOR,              //0x05,0x20
-    HID_USAGE_SENSOR_DATA_ENVIRONMENTAL_TEMPERATURE,  //0x0A,0x34,0x04
-    HID_COLLECTION(Physical),           //0xA1,0x00
-      HID_USAGE_PAGE_SENSOR,            //0x05,0x20
-      HID_USAGE_SENSOR_DATA_ENVIRONMENTAL_TEMPERATURE, //0x0A,0x34,0x04
-      HID_LOGICAL_MIN_16(0x01,0x80),    //0x16,a,b        
-      HID_LOGICAL_MAX_16(0xFF,0x7F),    //0x26,a,b         
-      HID_REPORT_SIZE(16),    //0x75,16
-      HID_REPORT_COUNT(1),    //0x95,1                            
-      HID_UNIT_EXPONENT(0x0E), //0x55,0x0E        2 scale default unit “Celsius” to provide 2 digits past the decimal point
-      HID_INPUT(Data_Var_Abs),  //0x81,a
-    HID_END_COLLECTION,        //1    
-  HID_END_COLLECTION          //1
-}; 
 
 //******************************************************************************
 void USB_Reset(void)
@@ -302,17 +161,21 @@ void USB_LP_CAN1_RX0_IRQHandler()
     if (USB->ISTR & USB_ISTR_SOF) 
     {
       USB->ISTR &= ~USB_ISTR_SOF;
-      if ((USB->EPR[0] & EP_STAT_TX) == TX_STALL)
+      if ((USB->EPR[0] & EP_STAT_TX) == TX_STALL) //this part turn off the STALL if it was be turned on before
         USBLIB_setStatTx(0, TX_NAK);
-      if (readyToSend == 1)
+      
+      for (int i=1;i<EPCOUNT;i++)
       {
-        readyToSend = 0;       
-        if (EpData[userEPn].lTX > 0)
-            USBLIB_EPBuf2Pma(userEPn);
+        if(EpData[i].SendStatus == EP_SEND_INITIATE)
+        {
+          if (EpData[i].lTX > 0)
+            USBLIB_EPBuf2Pma(i);
           else
-            BDTable[userEPn].TX_Count = 0;
-       USBLIB_setStatTx(1, TX_VALID);
-       putlog();
+            BDTable[i].TX_Count = 0;
+          USBLIB_setStatTx(i, TX_VALID);
+          EpData[i].SendStatus = EP_SEND_BUSY;
+          putlog();
+        } 
       }
       return;
     }
@@ -347,7 +210,7 @@ void USB_EPHandler(uint16_t Status)
       { 
         if (EP & USB_EP0R_SETUP) 
         {
-        SetupPacket = (USBLIB_SetupPacket *)EpData[EPn].pRX_BUFF;
+        SetupPacket = (USB_SetupPacket *)EpData[EPn].pRX_BUFF;
       #ifdef SWOLOG
         pFloat = stradd (pFloat,"\r\nSETUP ");
         loggingSetupPacket(SetupPacket);
@@ -362,8 +225,17 @@ void USB_EPHandler(uint16_t Status)
           case USB_REQUEST_GET_DESCRIPTOR:
           #ifdef SWOLOG
             pFloat = stradd (pFloat,"GET_DESCRIPTOR ");
+            pFloat = stradd (pFloat,Log_descriptorName(SetupPacket));
           #endif
-            USBLIB_GetDescriptor(SetupPacket);
+            uint16_t *descAddr;
+            uint16_t desclen;
+            if (USB_GetDescriptor(SetupPacket, &descAddr, &desclen))
+              USBLIB_SendData(0, descAddr, desclen);
+            else
+            {
+              BDTable[0].TX_Count = 0;
+              USBLIB_setStatTx(0, TX_STALL);
+            }
             break;
               
           case USB_REQUEST_SET_ADDRESS:
@@ -432,7 +304,7 @@ void USB_EPHandler(uint16_t Status)
           #ifdef SWOLOG
              pFloat = stradd (pFloat,"CLEAR_FEATURE");
           #endif
-            USBLIB_SendData(0, 0, 0);        // I don't sure....
+            USBLIB_SendData(0, 0, 0);        // here need manipulate EP1 status
             break;
             
           default:
@@ -538,81 +410,11 @@ void USB_EPHandler(uint16_t Status)
           #ifdef SWOLOG
             pFloat = stradd (pFloat," End Transmit ");
           #endif
-          //DataTransmitedHandler();
+          if (EpData[EPn].SendStatus == EP_SEND_BUSY)
+            EpData[EPn].SendStatus = EP_SEND_READY;
           }
       }//something transmitted
 }//void USB_EPHandler
-
-//*****************************************************************************
-//see chapter 9.4.3 USB 2.0 specification
-void USBLIB_GetDescriptor(USBLIB_SetupPacket *SPacket)
-{
-  USB_STR_DESCRIPTOR *pSTR;
-  uint16_t descSize;
-  switch (SPacket->wValue.H)
-  {
-    case USB_DEVICE_DESC_TYPE:
-    #ifdef SWOLOG
-      pFloat = stradd (pFloat,"DEVICE");
-    #endif
-      descSize=(sizeof(sDeviceDescriptor)< SPacket->wLength)? sizeof(sDeviceDescriptor) : SPacket->wLength;
-      USBLIB_SendData(0, (uint16_t *)&sDeviceDescriptor, descSize);
-      break;
-
-    case USB_CFG_DESC_TYPE:
-    #ifdef SWOLOG
-      pFloat = stradd (pFloat,"CONF");
-    #endif  
-    //use only one configuration, but wValue.L is ignored
-      descSize=(sizeof(aConfDescriptor)< SPacket->wLength)? sizeof(aConfDescriptor) : SPacket->wLength;
-      USBLIB_SendData(0, (uint16_t *)&aConfDescriptor, descSize);
-      break;
-
-    case USB_STR_DESC_TYPE:
-    #ifdef SWOLOG
-      pFloat = stradd (pFloat,"STR");
-    #endif
-      if (SPacket->wValue.L > LAST_NUM_STRING_DESCR)
-        {
-          //USBLIB_SendData(0, 0, 0);
-          BDTable[0].TX_Count = 0;
-          USBLIB_setStatTx(0, TX_STALL); 
-        }
-        else
-        {
-          pSTR = (USB_STR_DESCRIPTOR *)StringDescriptors[SetupPacket->wValue.L];
-          descSize=(pSTR->bLength < SPacket->wLength)? pSTR->bLength : SPacket->wLength;
-          USBLIB_SendData(0, (uint16_t *)pSTR, descSize);
-        }
-      break;
-        
-    case USB_DEVICE_QR_DESC_TYPE:
-    #ifdef SWOLOG
-      pFloat = stradd (pFloat,"QUAL");
-    #endif  
-      /*descSize=(sizeof(sQualDescriptor)< SPacket->wLength)? sizeof(sQualDescriptor) : SPacket->wLength;
-      USBLIB_SendData(0, (uint16_t *)&sQualDescriptor, descSize);
-      break;  // if have QUALIFIER Descriptor*/
-      BDTable[0].TX_Count = 0;
-      USBLIB_setStatTx(0, TX_STALL);                                              //maybe EP_KIND must be 1 ?
-      break;
-       
-    case USB_REPORT_DESC_TYPE:
-    #ifdef SWOLOG
-      pFloat = stradd (pFloat,"REPORT");
-    #endif  
-      descSize=(sizeof(HID_Sensor_ReportDesc)< SPacket->wLength)? sizeof(HID_Sensor_ReportDesc) : SPacket->wLength;
-      USBLIB_SendData(0, (uint16_t *)&HID_Sensor_ReportDesc, descSize);
-      break;    
-        
-    default:
-    #ifdef SWOLOG
-      pFloat = stradd (pFloat,"??");
-    #endif   
-      USBLIB_SendData(0, 0, 0);
-      break;
-  }
-}
 
 //*****************************************************************************
 void USBLIB_SendData(uint8_t EPn, uint16_t *Data, uint16_t Length)
@@ -689,19 +491,29 @@ void USBLIB_setStatRx(uint8_t EPn, uint16_t Stat)
   USB->EPR[EPn]         = (val ^ (Stat & EP_STAT_RX)) & (EP_MASK | EP_STAT_RX);
 }
 
-void USB_sendReport(uint8_t EPn, uint16_t *Data, uint16_t Length)
-{                                                                                         
+/* ****************************************************************************
+This routine try to send IN REPORT. 
+EPn - endpoint number to use
+Data - pointer to outgong data
+Length - length data in bytes
+return value: 0 - if data deny to send. 1-Data allow to send and will be send
+**************************************************************************** */
+uint8_t USB_sendReport(uint8_t EPn, uint16_t *Data, uint16_t Length)
+{ 
+  if (EpData[EPn].SendStatus != EP_SEND_READY)
+    return(0);
   EpData[EPn].lTX = Length;
   EpData[EPn].pTX_BUFF = Data;
-  userEPn=EPn;
-  readyToSend=1;
+  EpData[EPn].SendStatus = EP_SEND_INITIATE;
+  return(1);
 }
+
 #ifdef SWOLOG
 /* ****************************************************************************
 SWO logging for SETUP packet type to SWO by ITM_SendChar
 pSetup - pointer on struct
 **************************************************************************** */
-void loggingSetupPacket(USBLIB_SetupPacket *pSetup)
+void loggingSetupPacket(USB_SetupPacket *pSetup)
 {
   pFloat = stradd (pFloat, "\r\nbmRequestType=");
   pFloat = itoa(pSetup->bmRequestType ,pFloat,2,0);

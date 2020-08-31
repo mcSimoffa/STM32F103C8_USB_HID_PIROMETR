@@ -34,16 +34,21 @@ typedef struct
   __IO uint16_t _res3;
 } USB_BDT;
 
+//EP Send status:
+#define EP_SEND_BUSY       0
+#define EP_SEND_INITIATE   1
+#define EP_SEND_READY      2
 typedef struct 
 {
-    uint16_t  Number;       // EP number
-    uint16_t  Type;         // EP Type
-    uint8_t   TX_Max;       // Max TX EP Buffer
-    uint8_t   RX_Max;       // Max RT EP Buffer
-    uint16_t *pTX_BUFF;     // TX Buffer pointer
-    uint32_t  lTX;          // TX Data length
-    uint16_t *pRX_BUFF;     // RX Buffer pointer
-    uint32_t  lRX;          // RX Data length
+    uint16_t  Number;      // EP number
+    uint16_t  Type;        // EP Type
+    uint8_t   TX_Max;      // Max TX EP Buffer
+    uint8_t   RX_Max;      // Max RT EP Buffer
+    uint16_t *pTX_BUFF;    // TX Buffer pointer
+    uint32_t  lTX;         // TX Data length
+    uint16_t *pRX_BUFF;    // RX Buffer pointer
+    uint32_t  lRX;         // RX Data length
+    uint8_t  SendStatus;    //EP Send status: 0=Ready to Send 1=BUSY (send in process) 
 } USB_EPinfo;
 
 
@@ -112,7 +117,7 @@ typedef struct
     USBLIB_WByte    wValue;
     USBLIB_WByte    wIndex;
     uint16_t        wLength;
-} USBLIB_SetupPacket;
+} USB_SetupPacket;
 //---------------------------
 
 #define USB_REQUEST_TYPE            0x60 // bits 5..6 Table 9-2 USB 2.0 specification)
@@ -185,47 +190,6 @@ typedef struct
 #define USB_CLASS_APPLICATION_SPECIFIC	    0xFE
 #define USB_CLASS_VENDOR_SPECIFIC		        0xFF
 
-typedef struct // Table 9-8 USB specification
-{
-    uint8_t  bLength;
-    uint8_t  bDescriptorType;
-    uint8_t  bcdUSB_L;
-    uint8_t  bcdUSB_H;
-    uint8_t  bDeviceClass;
-    uint8_t  bDeviceSubClass;
-    uint8_t  bDeviceProtocol;
-    uint8_t  bMaxPacketSize0;
-    uint8_t  idVendor_L;
-    uint8_t  idVendor_H;
-    uint8_t  idProduct_L;
-    uint8_t  idProduct_H;
-    uint8_t  bcdDevice_L;
-    uint8_t  bcdDevice_H;
-    uint8_t  iManufacturer;
-    uint8_t  iProduct;
-    uint8_t  iSerialNumber;
-    uint8_t  bNumConfigurations;
-} Typedef_USB_DEVICE_DESCRIPTOR;
-
-/*typedef struct // Table 9-9 USB specification
-{
-    uint8_t  bLength;
-    uint8_t  bDescriptorType;
-    uint8_t  bcdUSB_L;
-    uint8_t  bcdUSB_H;
-    uint8_t  bDeviceClass;
-    uint8_t  bDeviceSubClass;
-    uint8_t  bDeviceProtocol;
-    uint8_t  bMaxPacketSize0;
-    uint8_t  bNumConfigurations;
-    uint8_t  bReservedFuture;
-} Typedef_USB_DEVICE_QUALIFIER_DESCRIPTOR;*/
-
-typedef struct
-{
-    uint8_t bLength;
-    uint8_t bDescriptorType;
-} USB_STR_DESCRIPTOR;
 
 //configuration configuration descriptor field 'bmAttributes'  (Table 9-10 USB specification offset = 7)
 #define BMATTRIBUTES_MASK           0x80
@@ -244,6 +208,7 @@ typedef struct
 
 //GET_STATUS request (Figure 9-4 USB 2.0 specification)
 #define DEVICE_STATUS_MASK          0x03
+#define STATUS_BUS_POWERED          0x00
 #define STATUS_SELF_POWERED         0x01
 #define STATUS_REMOTE_WAKEUP        0x02
 
