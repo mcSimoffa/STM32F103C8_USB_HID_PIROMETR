@@ -84,11 +84,11 @@
                 </option>
                 <option>
                     <name>OCDynDriverList</name>
-                    <state>ARMSIM_ID</state>
+                    <state>JLINK_ID</state>
                 </option>
                 <option>
                     <name>OCLastSavedByProductVersion</name>
-                    <state>8.42.1.23869</state>
+                    <state>8.40.2.22864</state>
                 </option>
                 <option>
                     <name>UseFlashLoader</name>
@@ -1445,11 +1445,11 @@
                 <loadFlag>0</loadFlag>
             </plugin>
             <plugin>
-                <file>$TOOLKIT_DIR$\plugins\rtos\SMX\smxAwareIarArm8b.ewplugin</file>
+                <file>$TOOLKIT_DIR$\plugins\rtos\SMX\smxAwareIarArm8.ewplugin</file>
                 <loadFlag>0</loadFlag>
             </plugin>
             <plugin>
-                <file>$TOOLKIT_DIR$\plugins\rtos\SMX\smxAwareIarArm8bBE.ewplugin</file>
+                <file>$TOOLKIT_DIR$\plugins\rtos\SMX\smxAwareIarArm8BE.ewplugin</file>
                 <loadFlag>0</loadFlag>
             </plugin>
             <plugin>
@@ -2930,11 +2930,11 @@
                 <loadFlag>0</loadFlag>
             </plugin>
             <plugin>
-                <file>$TOOLKIT_DIR$\plugins\rtos\SMX\smxAwareIarArm8b.ewplugin</file>
+                <file>$TOOLKIT_DIR$\plugins\rtos\SMX\smxAwareIarArm8.ewplugin</file>
                 <loadFlag>0</loadFlag>
             </plugin>
             <plugin>
-                <file>$TOOLKIT_DIR$\plugins\rtos\SMX\smxAwareIarArm8bBE.ewplugin</file>
+                <file>$TOOLKIT_DIR$\plugins\rtos\SMX\smxAwareIarArm8BE.ewplugin</file>
                 <loadFlag>0</loadFlag>
             </plugin>
             <plugin>

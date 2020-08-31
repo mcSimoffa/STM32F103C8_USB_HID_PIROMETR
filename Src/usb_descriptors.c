@@ -231,6 +231,10 @@ char *Log_descriptorName(USB_SetupPacket *SPacket)
       retval = "QUALIF";
       break;
       
+   case USB_REPORT_DESC_TYPE:
+      retval = "REPORT";
+      break;
+      
     default:
       retval = "??";
       break;

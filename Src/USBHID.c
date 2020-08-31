@@ -25,12 +25,10 @@ USB_EPinfo EpData[EPCOUNT] =
   {.Number=1, .Type=EP_INTERRUPT,   .TX_Max=8, .RX_Max=8, .pTX_BUFF=0, .lTX=0, .pRX_BUFF=0, .lRX=0, .SendStatus=EP_SEND_READY}
 };
 USB_SetupPacket   *SetupPacket;
-volatile uint8_t      DeviceAddress = 0;
+uint8_t  DeviceAddress = 0;
+uint16_t DeviceConfigured = 0;
 uint8_t reportPeriod = 0;
 uint16_t DeviceStatus = STATUS_BUS_POWERED;
-uint8_t readyToSend=0;
-uint8_t userEPn;
-
 
 
 //******************************************************************************
@@ -59,11 +57,13 @@ void USB_Reset(void)
         #endif   
         }
       USB->EPR[i] = (EpData[i].Number | EpData[i].Type | RX_VALID | TX_NAK);
+      EpData[i].SendStatus = EP_SEND_READY;
       }
     
     for (uint8_t i = EPCOUNT; i < 8; i++) //inactive endpoints
         USB->EPR[i] = i | RX_DISABLE | TX_DISABLE;
-
+    
+    DeviceConfigured = 0;
     USB->CNTR   = USB_CNTR_CTRM | USB_CNTR_RESETM | USB_CNTR_SUSPM | USB_CNTR_ERRM | USB_CNTR_SOFM;
     USB->ISTR   = 0x00;
     USB->BTABLE = 0x00;
@@ -191,7 +191,6 @@ void USB_LP_CAN1_RX0_IRQHandler()
 //*****************************************************************************
 void USB_EPHandler(uint16_t Status)
 {
-    uint16_t DeviceConfigured = 0;
     uint8_t  EPn = Status & ISTR_EP_ID; //endpoint number where occured
     uint32_t EP  = USB->EPR[EPn];
   #ifdef SWOLOG
@@ -500,12 +499,14 @@ return value: 0 - if data deny to send. 1-Data allow to send and will be send
 **************************************************************************** */
 uint8_t USB_sendReport(uint8_t EPn, uint16_t *Data, uint16_t Length)
 { 
-  if (EpData[EPn].SendStatus != EP_SEND_READY)
-    return(0);
-  EpData[EPn].lTX = Length;
-  EpData[EPn].pTX_BUFF = Data;
-  EpData[EPn].SendStatus = EP_SEND_INITIATE;
-  return(1);
+  if ((EpData[EPn].SendStatus == EP_SEND_READY) && DeviceConfigured)
+  {
+    EpData[EPn].lTX = Length;
+    EpData[EPn].pTX_BUFF = Data;
+    EpData[EPn].SendStatus = EP_SEND_INITIATE;
+    return(1);
+  }
+  return(0);
 }
 
 #ifdef SWOLOG
