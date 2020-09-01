@@ -21,19 +21,24 @@ __no_init volatile USB_BDT BDTable[EPCOUNT] @ USB_PMAADDR ; //Buffer Description
   char *pFloat;
 #endif
 
-void (*USB_getReport_callback)(void);  
 USB_EPinfo EpData[EPCOUNT] =
 {
-  {.Number=0, .Type=EP_CONTROL,     .TX_Max=16, .RX_Max=16, .pTX_BUFF=0, .lTX=0, .pRX_BUFF=0, .lRX=0, .SendStatus=EP_SEND_READY},
-  {.Number=1, .Type=EP_INTERRUPT,   .TX_Max=16, .RX_Max=16, .pTX_BUFF=0, .lTX=0, .pRX_BUFF=0, .lRX=0, .SendStatus=EP_SEND_READY}
+  {.Number=0, .Type=EP_CONTROL,     .TX_Max=16, .RX_Max=16, .pTX_BUFF=0, .lTX=0, .pRX_BUFF=0, .lRX=0, .SendState=EP_SEND_READY, .ReadState=EP_READ_NOTHING},
+  {.Number=1, .Type=EP_INTERRUPT,   .TX_Max=16, .RX_Max=16, .pTX_BUFF=0, .lTX=0, .pRX_BUFF=0, .lRX=0, .SendState=EP_SEND_READY, .ReadState=EP_READ_NOTHING}
 };
+uint8_t *pDataSetupPackets=0;     //pointer to Buffer accumulating all data packets for Setup transaction
+uint16_t sizeDataSetupPackets=0;  //size of this Buffer
 USB_SetupPacket   *SetupPacket;
 uint8_t  DeviceAddress = 0;
 uint16_t DeviceConfigured = 0;
 uint8_t reportPeriod = 0;
 uint16_t DeviceStatus = STATUS_BUS_POWERED;
 
-
+Typedef_USB_Callback USB_Callback={
+  .GetInputReport = 0,
+  .GetOutputReport = 0,
+  .GetFeatureReport = 0
+};
 //******************************************************************************
 void USB_Reset(void)
 {
@@ -60,7 +65,8 @@ void USB_Reset(void)
         #endif   
         }
       USB->EPR[i] = (EpData[i].Number | EpData[i].Type | RX_VALID | TX_NAK);
-      EpData[i].SendStatus = EP_SEND_READY;
+      EpData[i].SendState = EP_SEND_READY;
+      EpData[i].ReadState = EP_READ_NOTHING;
       }
     
     for (uint8_t i = EPCOUNT; i < 8; i++) //inactive endpoints
@@ -169,14 +175,14 @@ void USB_LP_CAN1_RX0_IRQHandler()
       
       for (int i=1;i<EPCOUNT;i++)
       {
-        if(EpData[i].SendStatus == EP_SEND_INITIATE)
+        if(EpData[i].SendState == EP_SEND_INITIATE)
         {
           if (EpData[i].lTX > 0)
             USBLIB_EPBuf2Pma(i);
           else
             BDTable[i].TX_Count = 0;
           USBLIB_setStatTx(i, TX_VALID);
-          EpData[i].SendStatus = EP_SEND_BUSY;
+          EpData[i].SendState = EP_SEND_BUSY;
           putlog();
         } 
       }
@@ -217,6 +223,30 @@ void USB_EPHandler(uint16_t Status)
         pFloat = stradd (pFloat,"\r\nSETUP ");
         loggingSetupPacket(SetupPacket);
       #endif
+        
+        //it had been received SETUP packet with OUT wLength>0. Next will be wLength bytes datas
+        if (((SetupPacket->bmRequestType & USB_REQUEST_DIR) == USB_REQUEST_DIR_OUT) && (SetupPacket->wLength >0))
+        {
+          uint16_t needMem = sizeof(SetupPacket)+ SetupPacket->wLength; //how many bytes need to save this transaction with SETUP packet
+          if (sizeDataSetupPackets < needMem) //has too little allocated mem ?
+          {
+            free(pDataSetupPackets);
+            pDataSetupPackets = 0;
+            sizeDataSetupPackets = 0;
+          }
+            
+          if (!pDataSetupPackets)
+          {
+            pDataSetupPackets = malloc(needMem);
+            if(pDataSetupPackets)
+              sizeDataSetupPackets = needMem;
+            else
+              while(1)
+                asm("nop"); //memory didn't provide
+          }
+   tyjtyjtyjtj;
+        } 
+        
         if ((SetupPacket->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_STANDARD)	//Request type Standard ?
         {
       #ifdef SWOLOG
@@ -281,7 +311,7 @@ void USB_EPHandler(uint16_t Status)
           #ifdef SWOLOG
             pFloat = stradd (pFloat,"GET_CONF");
           #endif
-            USBLIB_SendData(0, &DeviceConfigured, 1);
+            USBLIB_SendData(0, &DeviceConfigured, 1);                              //pochemu otpravka 1 byte a ne  2 ????????????                                                                      
             break;
 
           case USB_REQUEST_SET_CONFIGURATION:
@@ -326,14 +356,57 @@ void USB_EPHandler(uint16_t Status)
           {
             case USB_HID_GET_REPORT:
             #ifdef SWOLOG
-              pFloat = stradd (pFloat,"Get Report");
+              pFloat = stradd (pFloat,"GET REPORT");
             #endif
-            USB_getReport_callback();
+              uint16_t *ppReportAddr;
+              uint16_t pReportSize;
+              pReportSize = SetupPacket->wLength;
+              switch(SetupPacket->wValue.H)
+              {
+                case USB_HID_REPORT_IN:
+                #ifdef SWOLOG
+                  pFloat = stradd (pFloat," IN");
+                #endif
+                  if (USB_Callback.GetInputReport)
+                  {
+                    USB_Callback.GetInputReport(&ppReportAddr, &pReportSize);
+                    USBLIB_SendData(0, ppReportAddr, pReportSize);  
+                  }
+                  break;
+                  
+                case USB_HID_REPORT_OUT:
+                #ifdef SWOLOG
+                  pFloat = stradd (pFloat," OUT");
+                #endif
+                  if (USB_Callback.GetOutputReport)
+                  {
+                    USB_Callback.GetOutputReport(&ppReportAddr, &pReportSize);
+                    USBLIB_SendData(0, ppReportAddr, pReportSize);  
+                  }
+                  break;
+                  
+                case USB_HID_REPORT_FEATURE:
+                #ifdef SWOLOG
+                  pFloat = stradd (pFloat," FEATURE");
+                #endif
+                  if (USB_Callback.GetFeatureReport)
+                  {
+                    USB_Callback.GetFeatureReport(&ppReportAddr, &pReportSize);
+                    USBLIB_SendData(0, ppReportAddr, pReportSize);  
+                  }
+                  break;
+      
+                default: 
+                #ifdef SWOLOG
+                  pFloat = stradd (pFloat," FEATURE");
+                #endif 
+                  asm("nop");
+              }
             break;
                                   
             case USB_HID_SET_REPORT:
             #ifdef SWOLOG
-              pFloat = stradd (pFloat,"Set Report");
+              pFloat = stradd (pFloat,"SET REPORT");
             #endif  
             break;
                                   
@@ -413,8 +486,8 @@ void USB_EPHandler(uint16_t Status)
           #ifdef SWOLOG
             pFloat = stradd (pFloat," End Transmit ");
           #endif
-          if (EpData[EPn].SendStatus == EP_SEND_BUSY)
-            EpData[EPn].SendStatus = EP_SEND_READY;
+          if (EpData[EPn].SendState == EP_SEND_BUSY)
+            EpData[EPn].SendState = EP_SEND_READY;
           }
       }//something transmitted
 }//void USB_EPHandler
@@ -509,11 +582,11 @@ return value: 0 - if data deny to send. 1-Data allow to send and will be send
 **************************************************************************** */
 uint8_t USB_sendReport(uint8_t EPn, uint16_t *Data, uint16_t Length)
 { 
-  if ((EpData[EPn].SendStatus == EP_SEND_READY) && DeviceConfigured)
+  if ((EpData[EPn].SendState == EP_SEND_READY) && DeviceConfigured)
   {
     EpData[EPn].lTX = Length;
     EpData[EPn].pTX_BUFF = Data;
-    EpData[EPn].SendStatus = EP_SEND_INITIATE;
+    EpData[EPn].SendState = EP_SEND_INITIATE;
     return(1);
   }
   return(0);

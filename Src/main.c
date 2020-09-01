@@ -4,7 +4,7 @@
 #include "Systick.h"
 #include "additional_func.h"
 #include "oringbuf.h"
-#include "USBHID.h"
+#include "usb_callback.h"
 
 //for SWO logging activate SWOLOG in Options\C++ compiler\Defined Symbol
 
@@ -19,18 +19,20 @@
 #ifdef SWOLOG
    uint8_t toSWO;
 #endif
-
+//Systick Callback
 extern Typedef_SystickCallback systickSheduler;
-extern void (*USB_getReport_callback)(void);
 void Sender();
-void GetReportRespone();
+
+//USB Callback
+extern Typedef_USB_Callback USB_Callback;
+void USB_GetFeature(uint16_t **ppReport, uint16_t *len);
 
 struct _feature
   {
     uint32_t  word1;
     uint16_t  word2;
     uint16_t  word3;
-  } feature={1,2,3};
+  } HID_feature={1,2,3};
 
 void main()
 {
@@ -80,7 +82,7 @@ void main()
   DWT->CYCCNT = 0; //start value = 0
   
  //USB initialize
-  USB_getReport_callback = GetReportRespone;
+  USB_Callback.GetFeatureReport = USB_GetFeature;
   GPIO_RESET(GPIOA,1<<USB_ENABLE); //Enable USB pullup resistor 1k5
   //RCC->CFGR |= RCC_CFGR_USBPRE; //not divide PLL clock for USB 48MHz
   RCC->APB1ENR |= RCC_APB1ENR_USBEN; //clocking USB Enable
@@ -105,13 +107,20 @@ void main()
 
 void Sender()
 {
+  return; /*
  static uint16_t value=0; 
 (GPIO_READ_OUTPUT(GPIOC,1<<ONBOARD_LED)==0) ?  GPIO_SET(GPIOC,1<<ONBOARD_LED):GPIO_RESET(GPIOC,1<<ONBOARD_LED);
  USB_sendReport(1,&value,2);
- value++;
+ value++;*/
 }
 
-void GetReportRespone()
+/* ****************************************************************************
+This callback run as the GET_REPORT type get feature incoming 
+ppReport - pointer to pointer on variable contained data to send
+len - pointer to variable contained asked length
+**************************************************************************** */
+void USB_GetFeature(uint16_t **ppReport, uint16_t *len)
 {  
-  USBLIB_SendData(0,(uint16_t *)&feature,8); 
+  *ppReport = (uint16_t *)&HID_feature;
+  *len = (*len > sizeof(HID_feature)) ? sizeof(HID_feature): *len ;
 }

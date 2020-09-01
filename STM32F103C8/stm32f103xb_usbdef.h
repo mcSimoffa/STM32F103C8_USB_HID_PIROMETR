@@ -5,7 +5,7 @@
 #define LOBYTE(x) ((uint8_t)(x & 0x00FF))
 #define HIBYTE(x) ((uint8_t)((x & 0xFF00) >> 8))
 
-typedef struct 
+typedef struct //RM0008 chapter 23.5.4
 {
   __IO uint32_t EPR[8];
   __IO uint32_t RESERVED[8];
@@ -22,7 +22,7 @@ typedef struct
 #define USB_PMAADDR           (APB1PERIPH_BASE + 0x00006000UL) /*!< USB_IP Packet Memory Area base address */
 #define USB                   ((USB_TypeDef *)USB_BASE)
 
-typedef struct 
+typedef struct //RM0008 chapter 23.5.3
 {
   __IO uint16_t TX_Address;
   __IO uint16_t _res0;
@@ -34,25 +34,7 @@ typedef struct
   __IO uint16_t _res3;
 } USB_BDT;
 
-//EP Send status:
-#define EP_SEND_BUSY       0
-#define EP_SEND_INITIATE   1
-#define EP_SEND_READY      2
-typedef struct 
-{
-    uint16_t  Number;      // EP number
-    uint16_t  Type;        // EP Type
-    uint8_t   TX_Max;      // Max TX EP Buffer
-    uint8_t   RX_Max;      // Max RT EP Buffer
-    uint16_t *pTX_BUFF;    // TX Buffer pointer
-    uint32_t  lTX;         // TX Data length
-    uint16_t *pRX_BUFF;    // RX Buffer pointer
-    uint32_t  lRX;         // RX Data length
-    uint8_t  SendStatus;    //EP Send status: 0=Ready to Send 1=BUSY (send in process) 
-} USB_EPinfo;
-
-
-#define  BDT_COUNTn_RX_Msk 0x3FF     //RM0008 site 650
+#define  BDT_COUNTn_RX_Msk          0x3FF     //RM0008 site 650
 #define  USB_COUNT_RX_NUM_BLOCK_Pos 10
 #define  USB_COUNT_RX_BLSIZE_Pos    15
 #define  USB_COUNT_RX_BLSIZE        (1<<USB_COUNT_RX_BLSIZE_Pos)
@@ -119,12 +101,16 @@ typedef struct
     uint16_t        wLength;
 } USB_SetupPacket;
 //---------------------------
-
+//bmRequestType  bit 7
+#define USB_REQUEST_DIR         0x80
+#define USB_REQUEST_DIR_IN      0x80
+#define USB_REQUEST_DIR_OUT     0x00
+//bmRequestType  bit 6...5
 #define USB_REQUEST_TYPE            0x60 // bits 5..6 Table 9-2 USB 2.0 specification)
 #define USB_REQUEST_STANDARD        0x00
 #define USB_REQUEST_CLASS           0x20
 #define USB_REQUEST_VENDOR          0x40
-
+//bmRequestType  bit 4...0
 #define USB_REQUEST_RECIPIENT       0x1F // bits 1...4 Table 9-2 USB 2.0 specification)
 #define USB_REQUEST_DEVICE          0x00
 #define USB_REQUEST_INTERFACE       0x01
@@ -150,6 +136,10 @@ typedef struct
 #define USB_HID_SET_REPORT          0x09
 #define USB_HID_SET_IDLE            0x0A
 #define USB_HID_SET_PROTOCOL        0x0B
+//types of REPORT 
+#define USB_HID_REPORT_IN           0x01
+#define USB_HID_REPORT_OUT          0x02
+#define USB_HID_REPORT_FEATURE      0x03
 
 // USB Descriptor Types (Table 9-5 USB 2.0 specification)
 #define USB_DEVICE_DESC_TYPE        1
