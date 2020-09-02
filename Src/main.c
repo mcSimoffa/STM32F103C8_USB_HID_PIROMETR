@@ -27,12 +27,22 @@ void Sender();
 extern Typedef_USB_Callback USB_Callback;
 void USB_GetFeature(uint16_t **ppReport, uint16_t *len);
 
-struct _feature
+struct  //it described in section "feature reports" HID Report Descriptor
   {
-    uint32_t  word1;
-    uint16_t  word2;
-    uint16_t  word3;
-  } HID_feature={1,2,3};
+    uint32_t  interval;
+    int16_t  minimum;
+    int16_t  maximum;
+  } HID_SenrorFeature={
+    .interval = 100,
+    .minimum = -400,
+    .maximum = 15000};
+
+struct  //it described in section "input reports (transmit)" HID Report Descriptor
+{
+  uint8_t state;
+  uint8_t event;
+  int16_t temperature;
+} HID_SensorInReport;
 
 void main()
 {
@@ -65,8 +75,7 @@ void main()
   AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_1;
   
   if (!Oringbuf_Create(8100))
-    while(1)
-      asm("nop");   //don't have memory maybe
+    exceptionFail();   //don't have memory maybe
 #endif
   
   //1ms SysTick interval.
@@ -101,7 +110,6 @@ void main()
   {
   if(Oringbuf_Get(&toSWO,1))
     ITM_SendChar((uint32_t) toSWO);
-  //if GetTick()
   }
 }
 
@@ -118,9 +126,10 @@ void Sender()
 This callback run as the GET_REPORT type get feature incoming 
 ppReport - pointer to pointer on variable contained data to send
 len - pointer to variable contained asked length
+application only must to set this two pointers
 **************************************************************************** */
 void USB_GetFeature(uint16_t **ppReport, uint16_t *len)
 {  
-  *ppReport = (uint16_t *)&HID_feature;
-  *len = (*len > sizeof(HID_feature)) ? sizeof(HID_feature): *len ;
+  *ppReport = (uint16_t *)&HID_SenrorFeature;
+  *len = (*len > sizeof(HID_SenrorFeature)) ? sizeof(HID_SenrorFeature): *len ;
 }

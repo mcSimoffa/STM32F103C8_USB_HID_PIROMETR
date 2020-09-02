@@ -1,10 +1,13 @@
 /* ******    TODO    *********
-sdelat state mashine dlay SETs
-sdelat callbacki dlya SETs: SET REPORT
-sdelat otvety 0,0,0 nd SETs
+make transaction assembler for OUT direction transaction
+ 
+sdelat parser tipov transacciy otdelnoy proceduroy
+control (EPn=0) ? SETUP ? IN or OUT ? tip packeta
+if non compatible packet - fast naswer stall
 
 */
-#include "USBHID.h"
+#include "USB_packet.h"
+#include "USB_transact.h"
 #include "usb_descriptor.h"
 #include <stdlib.h>
 #include "Systick.h"
@@ -30,7 +33,9 @@ USB_EPinfo EpData[EPCOUNT] =
 
 Typedef_OUT_TransactionCollector EP0_Collect=
 {
-  .cnt = 0,  .sizeData = 0
+  .cnt = 0,
+  .sizeData = 0,
+  .state = OUT_COLLECTOR_NOTHING
 };
 
 
@@ -72,15 +77,13 @@ void USB_Reset(void)
           EpData[i].pRX_BUFF = (uint16_t *)malloc(EpData[i].RX_Max);
         #ifdef DEBUG
           if(EpData[i].pRX_BUFF == 0)
-            while(1)
-              asm("nop");         //memory not provided
+            exceptionFail();         //memory not provided
         #endif   
         }
       USB->EPR[i] = (EpData[i].Number | EpData[i].Type | RX_VALID | TX_NAK);
       EpData[i].SendState = EP_SEND_READY;
-      EP0_Collect.cnt = 0;
       }
-    
+    EP0_Collect.cnt = 0;
     for (uint8_t i = EPCOUNT; i < 8; i++) //inactive endpoints
         USB->EPR[i] = i | RX_DISABLE | TX_DISABLE;
     
@@ -97,33 +100,35 @@ void USB_LP_CAN1_RX0_IRQHandler()
     DWT->CYCCNT = 0;
     uint16_t istr=(uint16_t)USB->ISTR;
   #ifdef SWOLOG
-    pFloat = stradd (debugBuf, " ");
+    pFloat = stradd (debugBuf, "\r\n");  //new debugging string
   #endif
       
     if (USB->ISTR & USB_ISTR_SUSP) 
     {
       USB->ISTR &= ~USB_ISTR_SUSP;
-    #ifdef SWOLOG
-      pFloat = stradd (pFloat, "Sp");
-      putlog();
-    #endif
-      if (USB->DADDR & 0x7f) 
+      if (USB->DADDR & USB_DADDR_ADD) 
       {
         USB->DADDR = 0;
         USB->CNTR &= ~ USB_CNTR_SUSPM;
         USB->CNTR |= USB_CNTR_WKUPM;
-      #ifdef SWOLOG  
-        pFloat = stradd (debugBuf, "\r\nISTR=");
+      #ifdef SWOLOG 
+        pFloat = stradd (pFloat, "\n---------\r\nTime=");
+        pFloat = itoa(GetTick(), pFloat,10,0);
+        pFloat = stradd (pFloat, "\r\nISTR=");
         pFloat = itoa(istr, pFloat,2,0);
         pFloat = stradd (pFloat, "\r\nFNR=");
         pFloat = itoa(USB->FNR ,pFloat,2,0);
         pFloat = stradd (pFloat, "\r\nEP0=");
         pFloat = itoa(USB->EPR[0] ,pFloat,2,0);
-        putlog();
       #endif  
       }
+    #ifdef SWOLOG
+      pFloat = stradd (pFloat, " S");
+      putlog();
+    #endif
       return;
     }
+    
   #ifdef SWOLOG
     pFloat = stradd (pFloat, "\r\n\n---------\r\nTime=");
     pFloat = itoa(GetTick(), pFloat,10,0);
@@ -148,12 +153,6 @@ void USB_LP_CAN1_RX0_IRQHandler()
       USB->ISTR &= ~USB_ISTR_CTR;
       USB_EPHandler((uint16_t)USB->ISTR);
       putlog();
-      return;
-    }
-    if (USB->ISTR & USB_ISTR_PMAOVR) 
-    {
-      USB->ISTR &= ~USB_ISTR_PMAOVR;
-      // Handle PMAOVR status
       return;
     }
     
@@ -201,13 +200,9 @@ void USB_LP_CAN1_RX0_IRQHandler()
       return;
     }
     
-    if (USB->ISTR & USB_ISTR_ESOF) 
-    {
-      USB->ISTR &= ~USB_ISTR_ESOF;
-      return;
-    }
-    USB->ISTR = 0;                                                               //kogda eto ispolnaetsa
+    USB->ISTR = 0; //other interrupt
 }
+
 
 //*****************************************************************************
 void USB_EPHandler(uint16_t Status)
@@ -231,15 +226,16 @@ void USB_EPHandler(uint16_t Status)
         if (EP & USB_EP0R_SETUP) 
         {
         SetupPacket = (USB_SetupPacket *)EpData[EPn].pRX_BUFF;
+        EP0_Collect.state = OUT_COLLECTOR_NOTHING;
       #ifdef SWOLOG
         pFloat = stradd (pFloat,"\r\nSETUP ");
         loggingSetupPacket(SetupPacket);
       #endif
         
-        //it had been received SETUP packet with OUT wLength>0. Next will be wLength bytes datas
-        if (((SetupPacket->bmRequestType & USB_REQUEST_DIR) == USB_REQUEST_DIR_OUT) && (SetupPacket->wLength >0))
+        //it had been received SETUP packet with OUT direction in DATA phase
+        if ((SetupPacket->bmRequestType & USB_REQUEST_DIR) == USB_REQUEST_DIR_OUT)
         {
-          EP0_Collect.totalSize = sizeof(USB_SetupPacket)+ SetupPacket->wLength; //how many bytes need to save this SETUP packet + expected Data packets (wLength)
+          EP0_Collect.totalSize = SetupPacket->wLength;     //how many bytes need to save expected Data packets
           if (EP0_Collect.sizeData < EP0_Collect.totalSize) //has too little allocated mem ?
           {
             free(EP0_Collect.pData);
@@ -252,71 +248,44 @@ void USB_EPHandler(uint16_t Status)
             if(EP0_Collect.pData)
               EP0_Collect.sizeData = EP0_Collect.totalSize;
             else
-              while(1)
-                asm("nop"); //memory didn't provide
+              exceptionFail(); //memory didn't provide
           }
-          memcpy(EP0_Collect.pData, EpData[EPn].pRX_BUFF, sizeof(USB_SetupPacket));
-          EP0_Collect.cnt = sizeof(USB_SetupPacket);
+          EP0_Collect.cnt = 0;
+          EP0_Collect.state = OUT_COLLECTOR_ASSEMB;
         } 
-        
-        if ((SetupPacket->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_STANDARD)	//Request type Standard ?
-          StandardRequestHandler();
-        
-        else if ((SetupPacket->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_CLASS)	
-          ClassRequestHandler();
-      }//Setup packet
+        else  //it had been received SETUP packet with IN direction in DATA phase
+        {
+          //CALL parser transaction with IN DATA stage
+          uint16_t *pBufForSend;
+          uint16_t sizeForSend;
+          if (USB_IN_requestHandler(SetupPacket, &pBufForSend, &sizeForSend))
+            USBLIB_SendData(0, pBufForSend, sizeForSend);
+          else
+          {
+            BDTable[0].TX_Count = 0;
+            USBLIB_setStatTx(0, TX_STALL);
+          }
+        }        
+      } //Setup packet
       else
       {
       #ifdef SWOLOG
         pFloat = printHexMem(EpData[0].pRX_BUFF,pFloat,EpData[0].lRX);
       #endif 
-        if (EP0_Collect.cnt > 0) //collect transaction in process
+        if (EP0_Collect.state == OUT_COLLECTOR_ASSEMB) //assembling transaction in process ?
         {
           memcpy(EP0_Collect.pData + EP0_Collect.cnt, EpData[0].pRX_BUFF, EpData[0].lRX);
           EP0_Collect.cnt += EpData[0].lRX;
           if (EP0_Collect.cnt >= EP0_Collect.totalSize)
           {
-            USB_SetupPacket   *TR_SetupPacket;
-            TR_SetupPacket = (USB_SetupPacket *)EP0_Collect.pData;
-            if (((TR_SetupPacket->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_CLASS) && (TR_SetupPacket->bRequest == USB_HID_SET_REPORT))
-               switch(TR_SetupPacket->wValue.H)
-                {
-                  case USB_HID_REPORT_IN:
-                  #ifdef SWOLOG
-                    pFloat = stradd (pFloat," IN");
-                  #endif
-                    if (USB_Callback.SetInputReport)
-                      USB_Callback.SetInputReport(EP0_Collect.pData + sizeof(USB_SetupPacket), EP0_Collect.cnt - sizeof(USB_SetupPacket));
-                    break;
-                    
-                  case USB_HID_REPORT_OUT:
-                  #ifdef SWOLOG
-                    pFloat = stradd (pFloat," OUT");
-                  #endif
-                    if (USB_Callback.SetOutputReport)
-                      USB_Callback.SetOutputReport(EP0_Collect.pData + sizeof(USB_SetupPacket), EP0_Collect.cnt - sizeof(USB_SetupPacket));
-                    break;
-                    
-                  case USB_HID_REPORT_FEATURE:
-                  #ifdef SWOLOG
-                    pFloat = stradd (pFloat," FEATURE");
-                  #endif
-                    if (USB_Callback.SetFeatureReport)
-                      USB_Callback.SetFeatureReport(EP0_Collect.pData + sizeof(USB_SetupPacket), EP0_Collect.cnt - sizeof(USB_SetupPacket));
-                    break;
-        
-                  default: 
-                  #ifdef SWOLOG
-                    pFloat = stradd (pFloat," ??");
-                  #endif 
-                    asm("nop");
-                }
-            USBLIB_SendData(0, 0, 0); //ACK packet send
-            EP0_Collect.cnt = 0;
-          } //EP0_Collect.cnt >= EP0_Collect.totalSize
-        } //EP0_Collect.cnt > 0
+            EP0_Collect.state = OUT_COLLECTOR_NOTHING;
+            //CALL parser transaction with out DATA stage
+            
+          }
+        } //EP0_Collect.state == OUT_COLLECTOR_ASSEMB
       } // non SETUP packet
-    }//Control endpoint 
+    } //Control endpoint
+    
     else 
       { // Got data from another EP
         asm("nop");  // Call user function
@@ -357,212 +326,6 @@ void USB_EPHandler(uint16_t Status)
           }
       }//something transmitted
 }//void USB_EPHandler
-
-
-/* ****************************************************************************
-This inline routine runs if we have packet on EP=0 (control), 
-Type of packet is SETUP, Type of request is Standard
-***************************************************************************** */
-__inline void StandardRequestHandler()
-{
-#ifdef SWOLOG
-  pFloat = stradd (pFloat,"\r\nSTANDARD ");
-#endif
-  switch (SetupPacket->bRequest) 
-  {
-  case USB_REQUEST_GET_DESCRIPTOR:
-  #ifdef SWOLOG
-    pFloat = stradd (pFloat,"GET_DESCRIPTOR ");
-    pFloat = stradd (pFloat,Log_descriptorName(SetupPacket));
-  #endif
-    uint16_t *descAddr;
-    uint16_t desclen;
-    if (USB_GetDescriptor(SetupPacket, &descAddr, &desclen))
-      USBLIB_SendData(0, descAddr, desclen);
-    else
-    {
-      BDTable[0].TX_Count = 0;
-      USBLIB_setStatTx(0, TX_STALL);
-    }
-    break;
-      
-  case USB_REQUEST_SET_ADDRESS:
-  #ifdef SWOLOG
-    pFloat = stradd (pFloat,"SET_ADDRESS");
-  #endif
-    USBLIB_SendData(0, 0, 0);
-    DeviceAddress = SetupPacket->wValue.L;
-    break;
-
-  case USB_REQUEST_GET_STATUS:
-  #ifdef SWOLOG
-    pFloat = stradd (pFloat,"GET_STATUS");
-  #endif
-    uint16_t StatusVal;
-    StatusVal = 0;
-    switch(SetupPacket->bmRequestType & USB_REQUEST_RECIPIENT)
-    {
-      case USB_REQUEST_DEVICE:
-      #ifdef SWOLOG
-        pFloat = stradd (pFloat," DEVICE");
-      #endif
-        USBLIB_SendData(0, &DeviceStatus, 2);
-        break;
-      case USB_REQUEST_INTERFACE:
-      #ifdef SWOLOG
-        pFloat = stradd (pFloat," IFACE");
-      #endif
-        USBLIB_SendData(0, &StatusVal, 2);
-      case USB_REQUEST_ENDPOINT:
-      #ifdef SWOLOG
-        pFloat = stradd (pFloat," ENDP");
-      #endif
-        StatusVal = ((USB->EPR[SetupPacket->wIndex.L] & RX_VALID) == RX_STALL) ? 1:0;
-        USBLIB_SendData(0, &StatusVal, 2);  
-        break;
-      default:
-        USBLIB_SendData(0, 0, 0);
-    }
-  case USB_REQUEST_GET_CONFIGURATION:
-  #ifdef SWOLOG
-    pFloat = stradd (pFloat,"GET_CONF");
-  #endif
-    USBLIB_SendData(0, &DeviceConfigured, 1);                              //pochemu otpravka 1 byte a ne  2 ????????????                                                                      
-    break;
-
-  case USB_REQUEST_SET_CONFIGURATION:
-  #ifdef SWOLOG
-    pFloat = stradd (pFloat,"SET_CONF");
-  #endif
-    //if wValue.L= 0  State = Adresovano
-    //else need STALL answer
-    if (SetupPacket->wValue.L == 1)
-      DeviceConfigured = 1;   //if only one configuration - allowed so
-    USBLIB_SendData(0, 0, 0);
-    break;
-      
-  case USB_REQUEST_GET_INTERFACE:
-  #ifdef SWOLOG
-     pFloat = stradd (pFloat,"GET_INTFACE");
-  #endif
-    USBLIB_SendData(0, 0, 0);        // I don't sure....
-    break;
-
-  case USB_REQUEST_CLEAR_FEATURE:
-  #ifdef SWOLOG
-     pFloat = stradd (pFloat,"CLEAR_FEATURE");
-  #endif
-    USBLIB_SendData(0, 0, 0);        // here need manipulate EP1 status
-    break;
-    
-  default:
-    asm("nop");
-  #ifdef SWOLOG
-    pFloat = stradd (pFloat,"??");
-  #endif
-  } //switch (SetupPacket->bRequest)
-} //StandardRequestHandler()
-
-/* ****************************************************************************
-This inline routine runs if we have packet on EP=0 (control), 
-Type of packet is SETUP, Type of request is Class
-***************************************************************************** */
-__inline void ClassRequestHandler()
-{
-#ifdef SWOLOG
-  pFloat = stradd (pFloat," CLASS ");
-#endif
-  switch (SetupPacket->bRequest) 
-  {
-    case USB_HID_GET_REPORT:
-    #ifdef SWOLOG
-      pFloat = stradd (pFloat,"GET REPORT");
-    #endif
-      uint16_t *ppReportAddr;
-      uint16_t pReportSize;
-      pReportSize = SetupPacket->wLength;
-      switch(SetupPacket->wValue.H)
-      {
-        case USB_HID_REPORT_IN:
-        #ifdef SWOLOG
-          pFloat = stradd (pFloat," IN");
-        #endif
-          if (USB_Callback.GetInputReport)
-          {
-            USB_Callback.GetInputReport(&ppReportAddr, &pReportSize);
-            USBLIB_SendData(0, ppReportAddr, pReportSize);  
-          }
-          break;
-          
-        case USB_HID_REPORT_OUT:
-        #ifdef SWOLOG
-          pFloat = stradd (pFloat," OUT");
-        #endif
-          if (USB_Callback.GetOutputReport)
-          {
-            USB_Callback.GetOutputReport(&ppReportAddr, &pReportSize);
-            USBLIB_SendData(0, ppReportAddr, pReportSize);  
-          }
-          break;
-          
-        case USB_HID_REPORT_FEATURE:
-        #ifdef SWOLOG
-          pFloat = stradd (pFloat," FEATURE");
-        #endif
-          if (USB_Callback.GetFeatureReport)
-          {
-            USB_Callback.GetFeatureReport(&ppReportAddr, &pReportSize);
-            USBLIB_SendData(0, ppReportAddr, pReportSize);  
-          }
-          break;
-
-        default: 
-        #ifdef SWOLOG
-          pFloat = stradd (pFloat," ??");
-        #endif 
-          asm("nop");
-      } //switch(SetupPacket->wValue.H)
-    break;
-                          
-    case USB_HID_SET_REPORT:
-    #ifdef SWOLOG
-      pFloat = stradd (pFloat,"SET REPORT ");
-    #endif 
-    break;
-                          
-    case USB_HID_GET_IDLE:
-    #ifdef SWOLOG
-      pFloat = stradd (pFloat,"Get Idle");
-    #endif          
-      break; 
-                          
-    case USB_HID_SET_IDLE:
-    #ifdef SWOLOG
-      pFloat = stradd (pFloat,"Set Idle");
-    #endif
-    reportPeriod = SetupPacket->wValue.H;
-    USBLIB_SendData(0, 0, 0);
-    break;
-                          
-    case USB_HID_GET_PROTOCOL:
-    #ifdef SWOLOG
-      pFloat = stradd (pFloat,"Get Protocol");
-    #endif  
-    break;
-                          
-    case USB_HID_SET_PROTOCOL:
-    #ifdef SWOLOG
-      pFloat = stradd (pFloat,"Set protocol");
-    #endif  
-    break;
-                          
-    default:
-    #ifdef SWOLOG
-      pFloat = stradd (pFloat,"??");
-    #endif  
-    break;
-  } //switch (SetupPacket->bRequest) 
-} //void ClassRequestHandler()
         
         
 //*****************************************************************************
@@ -692,8 +455,7 @@ void putlog()
   uint16_t len=pFloat-debugBuf;
   if (len)
     if (Oringbuf_Put(debugBuf, len)<len)
-      while(1)
-        asm("nop");   //debug buffer is owerflowed
+      exceptionFail();   //debug buffer is owerflowed
   return;
 }
 #endif

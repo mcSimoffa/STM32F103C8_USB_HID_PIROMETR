@@ -1,5 +1,5 @@
 #ifndef _SYSTICK_H_
- #define SYSTICK_H_
+ #define _SYSTICK_H_
  #include "stm32f10x.h"
  typedef struct
  {

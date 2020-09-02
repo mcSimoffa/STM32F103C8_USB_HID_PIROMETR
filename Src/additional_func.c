@@ -1,4 +1,9 @@
 #include "additional_func.h"
+__inline void exceptionFail()
+{
+  while(1)
+   asm("nop");
+}
 /* *************************************************************
  Send to ITM port knowed lenth string
 *pStr - pointer of sended string
