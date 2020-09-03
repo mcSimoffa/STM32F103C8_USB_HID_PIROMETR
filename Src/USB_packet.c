@@ -7,19 +7,20 @@ if non compatible packet - fast naswer stall
 
 */
 #include "USB_packet.h"
+#include "USB_sharedFunctions.h"
 #include "USB_transact.h"
-#include "usb_descriptor.h"
+//#include "usb_descriptor.h"
 #include <stdlib.h>
 #include "Systick.h"
 #include "additional_func.h"
 #include "oringbuf.h"
-#include "usb_callback.h"
+
 
 #define EPCOUNT   2
 __no_init volatile USB_BDT BDTable[EPCOUNT] @ USB_PMAADDR ; //Buffer Description Table
 
 #ifdef SWOLOG
-  void loggingSetupPacket(USB_SetupPacket *pSetup);
+  char *loggingSetupPacket(USB_SetupPacket *pSetup, char *pdst);
   void putlog();
   char debugBuf[512];
   char *pFloat;
@@ -34,28 +35,18 @@ USB_EPinfo EpData[EPCOUNT] =
 Typedef_OUT_TransactionCollector EP0_Collect=
 {
   .cnt = 0,
-  .sizeData = 0,
+  .allocSize = 0,
   .state = OUT_COLLECTOR_NOTHING
 };
 
 
 USB_SetupPacket   *SetupPacket;
 uint8_t  DeviceAddress = 0;
-uint16_t DeviceConfigured = 0;
+
 uint8_t reportPeriod = 0;
-uint16_t DeviceStatus = STATUS_BUS_POWERED;
 
-Typedef_USB_Callback USB_Callback={
-  .GetInputReport = 0,
-  .GetOutputReport = 0,
-  .GetFeatureReport = 0,
-  .SetInputReport = 0, 
-  .SetOutputReport = 0,
-  .SetFeatureReport = 0
-};
-
-void StandardRequestHandler();
-void ClassRequestHandler();
+//void StandardRequestHandler();
+//void ClassRequestHandler();
 //******************************************************************************
 void USB_Reset(void)
 {
@@ -87,7 +78,7 @@ void USB_Reset(void)
     for (uint8_t i = EPCOUNT; i < 8; i++) //inactive endpoints
         USB->EPR[i] = i | RX_DISABLE | TX_DISABLE;
     
-    DeviceConfigured = 0;
+    USB_setDeviceCofig (0);
     USB->CNTR   = USB_CNTR_CTRM | USB_CNTR_RESETM | USB_CNTR_SUSPM | USB_CNTR_ERRM | USB_CNTR_SOFM;
     USB->ISTR   = 0x00;
     USB->BTABLE = 0x00;
@@ -229,35 +220,36 @@ void USB_EPHandler(uint16_t Status)
         EP0_Collect.state = OUT_COLLECTOR_NOTHING;
       #ifdef SWOLOG
         pFloat = stradd (pFloat,"\r\nSETUP ");
-        loggingSetupPacket(SetupPacket);
+        pFloat=loggingSetupPacket(SetupPacket,pFloat);
       #endif
         
         //it had been received SETUP packet with OUT direction in DATA phase
         if ((SetupPacket->bmRequestType & USB_REQUEST_DIR) == USB_REQUEST_DIR_OUT)
         {
-          EP0_Collect.totalSize = SetupPacket->wLength;     //how many bytes need to save expected Data packets
-          if (EP0_Collect.sizeData < EP0_Collect.totalSize) //has too little allocated mem ?
+          EP0_Collect.expectedSize = SetupPacket->wLength;     //how many bytes need to save expected Data packets
+          if (EP0_Collect.allocSize < EP0_Collect.expectedSize) //has too little allocated mem ?
           {
             free(EP0_Collect.pData);
             EP0_Collect.pData = 0;
-            EP0_Collect.sizeData = 0;
+            EP0_Collect.allocSize = 0;
           }          
           if (!EP0_Collect.pData)
           {
-            EP0_Collect.pData = malloc(EP0_Collect.totalSize);
+            EP0_Collect.pData = malloc(EP0_Collect.expectedSize);
             if(EP0_Collect.pData)
-              EP0_Collect.sizeData = EP0_Collect.totalSize;
+              EP0_Collect.allocSize = EP0_Collect.expectedSize;
             else
               exceptionFail(); //memory didn't provide
           }
           EP0_Collect.cnt = 0;
           EP0_Collect.state = OUT_COLLECTOR_ASSEMB;
+          USBLIB_SendData(0, 0, 0); //ZPL with ACK
         } 
         else  //it had been received SETUP packet with IN direction in DATA phase
         {
-          //CALL parser transaction with IN DATA stage
           uint16_t *pBufForSend;
           uint16_t sizeForSend;
+          //CALL parser transaction with IN DATA stage
           if (USB_IN_requestHandler(SetupPacket, &pBufForSend, &sizeForSend))
             USBLIB_SendData(0, pBufForSend, sizeForSend);
           else
@@ -267,7 +259,7 @@ void USB_EPHandler(uint16_t Status)
           }
         }        
       } //Setup packet
-      else
+      else  // non SETUP packet
       {
       #ifdef SWOLOG
         pFloat = printHexMem(EpData[0].pRX_BUFF,pFloat,EpData[0].lRX);
@@ -276,14 +268,23 @@ void USB_EPHandler(uint16_t Status)
         {
           memcpy(EP0_Collect.pData + EP0_Collect.cnt, EpData[0].pRX_BUFF, EpData[0].lRX);
           EP0_Collect.cnt += EpData[0].lRX;
-          if (EP0_Collect.cnt >= EP0_Collect.totalSize)
+        }
+      } // non SETUP packet
+      
+      // SETUP packet with OUT DATA stage direction is been collected ?
+      if ((EP0_Collect.state == OUT_COLLECTOR_ASSEMB) &&(EP0_Collect.cnt >= EP0_Collect.expectedSize))
           {
             EP0_Collect.state = OUT_COLLECTOR_NOTHING;
             //CALL parser transaction with out DATA stage
-            
+            if (USB_OUT_requestHandler(SetupPacket, (uint16_t*)EP0_Collect.pData, EP0_Collect.cnt))
+              USBLIB_SendData(0, 0, 0);
+            else
+              {
+                BDTable[0].TX_Count = 0;
+                USBLIB_setStatTx(0, TX_STALL);
+              }
+              
           }
-        } //EP0_Collect.state == OUT_COLLECTOR_ASSEMB
-      } // non SETUP packet
     } //Control endpoint
     
     else 
@@ -346,8 +347,11 @@ void USBLIB_SendData(uint8_t EPn, uint16_t *Data, uint16_t Length)
   USBLIB_setStatTx(EPn, TX_VALID);
 }
 
-//*****************************************************************************
-//This routine moving data from PMA USB buffer to user buffer
+/* ****************************************************************************
+This routine moving data PMA -> User buffer EpData
+input: EPn - nomber endpoint buffer
+use Global variable EpData, BDTable
+**************************************************************************** */
 void USBLIB_Pma2EPBuf(uint8_t EPn)
 {
   uint32_t *Address = (uint32_t *)(USB_PMAADDR + BDTable[EPn].RX_Address * 2);
@@ -368,8 +372,11 @@ void USBLIB_Pma2EPBuf(uint8_t EPn)
   }
 }
 
-//*****************************************************************************
-//This routine moving data from user buffer to PMA USB buffer
+/* ****************************************************************************
+This routine moving data from user buffer to PMA USB buffer
+input: EPn - nomber endpoint buffer
+use Global variable EpData, BDTable
+**************************************************************************** */
 void USBLIB_EPBuf2Pma(uint8_t EPn)
 {
   uint32_t *Distination;
@@ -395,14 +402,18 @@ void USBLIB_EPBuf2Pma(uint8_t EPn)
 
 /* ****************************************************************************
 This routine togled EP_STAT_TX bits. 
-Pay attention this bits for can't been directly writen, but only togle */
+Pay attention this bits for can't been directly writen, but only togle 
+**************************************************************************** */
 void USBLIB_setStatTx(uint8_t EPn, uint16_t Stat)
 {
   register uint16_t val = USB->EPR[EPn];
   USB->EPR[EPn] = (val ^ (Stat & EP_STAT_TX)) & (EP_MASK | EP_STAT_TX);
 }
 
-//*****************************************************************************
+/* ****************************************************************************
+This routine togled EP_STAT_RX bits. 
+Pay attention this bits for can't been directly writen, but only togle 
+**************************************************************************** */
 void USBLIB_setStatRx(uint8_t EPn, uint16_t Stat)
 {
   register uint16_t val = USB->EPR[EPn];
@@ -418,7 +429,7 @@ return value: 0 - if data deny to send. 1-Data allow to send and will be send
 **************************************************************************** */
 uint8_t USB_sendReport(uint8_t EPn, uint16_t *Data, uint16_t Length)
 { 
-  if ((EpData[EPn].SendState == EP_SEND_READY) && DeviceConfigured)
+  if ((EpData[EPn].SendState == EP_SEND_READY) && USB_getDeviceConfig() )
   {
     EpData[EPn].lTX = Length;
     EpData[EPn].pTX_BUFF = Data;
@@ -427,29 +438,47 @@ uint8_t USB_sendReport(uint8_t EPn, uint16_t *Data, uint16_t Length)
   }
   return(0);
 }
+/* ****************************************************************************
+This routine will set USB Address whin next transaction occured
+input: address 
+**************************************************************************** */
+ void     USB_setAddress(uint8_t address)
+ {
+    DeviceAddress = address;
+ }
+
+/* ****************************************************************************
+This routine return Endpoint status 
+EPnum - endpoint number
+return value: 1 - Endpoint HALTED. 0-Endpoint NOT HALTED
+**************************************************************************** */
+uint16_t  USB_geStatusEP(uint8_t EPnum)
+{
+  return (uint16_t)(((USB->EPR[EPnum] & RX_VALID) == RX_STALL) ? 1:0);
+}
+
 
 #ifdef SWOLOG
 /* ****************************************************************************
 SWO logging for SETUP packet type to SWO by ITM_SendChar
 pSetup - pointer on struct
 **************************************************************************** */
-void loggingSetupPacket(USB_SetupPacket *pSetup)
+char *loggingSetupPacket(USB_SetupPacket *pSetup, char *pdst)
 {
-  pFloat = stradd (pFloat, "\r\nbmRequestType=");
-  pFloat = itoa(pSetup->bmRequestType ,pFloat,2,0);
-  pFloat = stradd (pFloat, "\r\nbRequest=");
-  pFloat = itoa(pSetup->bRequest ,pFloat,10,0);
-  pFloat = stradd (pFloat, "\r\nwValue.H= ");
-  pFloat = itoa(pSetup->wValue.H ,pFloat,10,0);
-  pFloat = stradd (pFloat, "\r\nwValue.L= ");
-  pFloat = itoa(pSetup->wValue.L ,pFloat,10,0);
-  pFloat = stradd (pFloat, "\r\nwIndex= ");
-  pFloat = itoa(pSetup->wIndex.L,pFloat,10,0);
-  pFloat = stradd (pFloat, "\r\nwLength= ");
-  pFloat = itoa(pSetup->wLength ,pFloat,10,0);
-  return;
+  pdst = stradd (pdst, "\r\nbmRequestType=");
+  pdst = itoa(pSetup->bmRequestType ,pdst,2,0);
+  pdst = stradd (pdst, "\r\nbRequest=");
+  pdst = itoa(pSetup->bRequest ,pdst,10,0);
+  pdst = stradd (pdst, "\r\nwValue.H= ");
+  pdst = itoa(pSetup->wValue.H ,pdst,10,0);
+  pdst = stradd (pdst, "\r\nwValue.L= ");
+  pdst = itoa(pSetup->wValue.L ,pdst,10,0);
+  pdst = stradd (pdst, "\r\nwIndex= ");
+  pdst = itoa(pSetup->wIndex.L,pdst,10,0);
+  pdst = stradd (pdst, "\r\nwLength= ");
+  pdst = itoa(pSetup->wLength ,pdst,10,0);
+  return(pdst);
 }
-
 void putlog()
 {
   uint16_t len=pFloat-debugBuf;

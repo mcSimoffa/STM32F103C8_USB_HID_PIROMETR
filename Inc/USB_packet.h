@@ -24,9 +24,9 @@ typedef struct
 typedef struct
 {
   uint16_t cnt;       //counter reading bytes
-  uint16_t totalSize; //expected size of transaction inclusiv Setup
+  uint16_t expectedSize; //expected size of transaction inclusiv Setup
   uint8_t *pData;     //pointer to Buffer accumulating all data packets for Setup transaction
-  uint16_t sizeData;  //size of this Buffer (use malloc)
+  uint16_t allocSize;  //size of this Buffer (use malloc)
   uint8_t state;
 } Typedef_OUT_TransactionCollector;
 //allowed value of Typedef_OUT_TransactionCollector.state:

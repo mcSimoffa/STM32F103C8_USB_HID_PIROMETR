@@ -25,7 +25,7 @@ void Sender();
 
 //USB Callback
 extern Typedef_USB_Callback USB_Callback;
-void USB_GetFeature(uint16_t **ppReport, uint16_t *len);
+void USB_GetFeature(uint8_t reportN, uint16_t **ppReport, uint16_t *len);
 
 struct  //it described in section "feature reports" HID Report Descriptor
   {
@@ -128,7 +128,7 @@ ppReport - pointer to pointer on variable contained data to send
 len - pointer to variable contained asked length
 application only must to set this two pointers
 **************************************************************************** */
-void USB_GetFeature(uint16_t **ppReport, uint16_t *len)
+void USB_GetFeature(uint8_t reportN, uint16_t **ppReport, uint16_t *len)
 {  
   *ppReport = (uint16_t *)&HID_SenrorFeature;
   *len = (*len > sizeof(HID_SenrorFeature)) ? sizeof(HID_SenrorFeature): *len ;
