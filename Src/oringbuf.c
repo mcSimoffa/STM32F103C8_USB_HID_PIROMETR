@@ -13,8 +13,8 @@ or -1 if origin buffer wasn't created
 ************************************************************** */
 void *Oringbuf_Create(uint16_t _size)
 {
-  
-  head = malloc(_size);
+  head = NULL;
+  head = (uint8_t*)malloc(_size);
   if (head)
     size = _size;
   tail = lowlimit = head;
@@ -29,8 +29,8 @@ return value - available free size in bytes
 uint16_t Oringbuf_GetFree()
 {
   uint16_t retval;
-  uint8_t *s_head=head;
-  uint8_t *s_tail=tail;
+  uint8_t *s_head = head;
+  uint8_t *s_tail = tail;
   if(size>0)
     
     retval = (s_head>=s_tail) ? (size-(uint16_t)(s_head-s_tail)) : (uint16_t)(s_tail-s_head);
@@ -47,8 +47,8 @@ return value - contain size in bytes
 ************************************************************** */
 uint16_t Oringbuf_GetFilled()
 {
-  uint8_t *s_head=head;
-  uint8_t *s_tail=tail;
+  uint8_t *s_head = head;
+  uint8_t *s_tail = tail;
   return ((s_head>=s_tail) ? (uint16_t)(s_head-s_tail) : (size-(uint16_t)(s_tail-s_head))) ; 
 }
 

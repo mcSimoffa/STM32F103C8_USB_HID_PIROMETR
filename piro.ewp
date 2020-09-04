@@ -226,6 +226,7 @@
                     <name>CCDefines</name>
                     <state>STM32F103xB</state>
                     <state>SWOLOG</state>
+                    <state>DEBUG</state>
                 </option>
                 <option>
                     <name>CCPreprocFile</name>

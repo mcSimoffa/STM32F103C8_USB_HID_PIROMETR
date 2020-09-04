@@ -4,6 +4,7 @@
 #include "usb_descriptor.h"
 #include "additional_func.h"
 #include "usb_callback.h"
+#include <stdlib.h>
 
 #ifdef SWOLOG
   extern char *pFloat;
@@ -13,16 +14,16 @@ uint8_t DeviceConfigured = 0;
 uint8_t IdleRate = 0;
 
 Typedef_USB_Callback USB_Callback={
-  .GetInputReport = 0,
-  .GetOutputReport = 0,
-  .GetFeatureReport = 0,
-  .SetInputReport = 0, 
-  .SetOutputReport = 0,
-  .SetFeatureReport = 0
+  .GetInputReport = NULL,
+  .GetOutputReport = NULL,
+  .GetFeatureReport = NULL,
+  .SetInputReport = NULL, 
+  .SetOutputReport = NULL,
+  .SetFeatureReport = NULL
 };
 
 /* ***************************************************************************
-This routine does parcing  request  for IN direction Data stage 
+This routine does parsing  request  for IN direction Data stage 
 pSetup      - pointer on location SETUP packet
 ppDataToIn  - double pointer on Data buffer to send in IN DATA stage
 sizeData    - pointer to size DATA stage
@@ -115,6 +116,9 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
  
   else if ((pSetup->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_CLASS)
     {
+    #ifdef SWOLOG
+      pFloat = stradd (pFloat,"\r\nCLASS HID");
+    #endif
      switch (pSetup->bRequest) 
       {
         case USB_HID_GET_REPORT:
@@ -203,7 +207,7 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
 
 
 /* ***************************************************************************
-This routine does parcing  request  for OUT direction Data stage 
+This routine does parsing  request  for OUT direction Data stage 
 pSetup      - pointer on location SETUP packet
 pDataOut    - pointer on received Data in DATA stage
 sizeData    - size DATA stage
@@ -256,6 +260,7 @@ uint8_t USB_OUT_requestHandler(USB_SetupPacket *pSetup, uint16_t *pDataOut, uint
     #endif
     } //switch (pSetup->bRequest)
   } //Request type Standard
+  
   else if ((pSetup->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_CLASS)
     {
    #ifdef SWOLOG

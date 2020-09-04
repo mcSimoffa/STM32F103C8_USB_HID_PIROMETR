@@ -26,6 +26,7 @@ void Sender();
 //USB Callback
 extern Typedef_USB_Callback USB_Callback;
 void USB_GetFeature(uint8_t reportN, uint16_t **ppReport, uint16_t *len);
+void USB_SetFeature(uint8_t reportN, uint8_t *pReport, uint16_t len);
 
 struct  //it described in section "feature reports" HID Report Descriptor
   {
@@ -92,6 +93,7 @@ void main()
   
  //USB initialize
   USB_Callback.GetFeatureReport = USB_GetFeature;
+  USB_Callback.SetFeatureReport = USB_SetFeature;
   GPIO_RESET(GPIOA,1<<USB_ENABLE); //Enable USB pullup resistor 1k5
   //RCC->CFGR |= RCC_CFGR_USBPRE; //not divide PLL clock for USB 48MHz
   RCC->APB1ENR |= RCC_APB1ENR_USBEN; //clocking USB Enable
@@ -113,6 +115,9 @@ void main()
   }
 }
 
+/* ****************************************************************************
+This callback run as the Systick achive interval ticks
+**************************************************************************** */
 void Sender()
 {
   return; /*
@@ -132,4 +137,17 @@ void USB_GetFeature(uint8_t reportN, uint16_t **ppReport, uint16_t *len)
 {  
   *ppReport = (uint16_t *)&HID_SenrorFeature;
   *len = (*len > sizeof(HID_SenrorFeature)) ? sizeof(HID_SenrorFeature): *len ;
+  asm("nop");
+}
+
+/* ****************************************************************************
+This callback run as the SET_REPORT type get feature incoming 
+pReport - pointer to feature Data
+len - size of Data
+application only must Save Data located pReport in owns structure or variable
+**************************************************************************** */
+void USB_SetFeature(uint8_t reportN, uint8_t *pReport, uint16_t len)
+{
+  memcpy(&HID_SenrorFeature, pReport, len);
+  asm("nop");
 }

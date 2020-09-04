@@ -1,20 +1,12 @@
 /* ******    TODO    *********
-make transaction assembler for OUT direction transaction
- 
-sdelat parser tipov transacciy otdelnoy proceduroy
-control (EPn=0) ? SETUP ? IN or OUT ? tip packeta
-if non compatible packet - fast naswer stall
-
 */
 #include "USB_packet.h"
 #include "USB_sharedFunctions.h"
 #include "USB_transact.h"
-//#include "usb_descriptor.h"
 #include <stdlib.h>
 #include "Systick.h"
 #include "additional_func.h"
 #include "oringbuf.h"
-
 
 #define EPCOUNT   2
 __no_init volatile USB_BDT BDTable[EPCOUNT] @ USB_PMAADDR ; //Buffer Description Table
@@ -28,64 +20,23 @@ __no_init volatile USB_BDT BDTable[EPCOUNT] @ USB_PMAADDR ; //Buffer Description
 
 USB_EPinfo EpData[EPCOUNT] =
 {
-  {.Number=0, .Type=EP_CONTROL,     .TX_Max=16, .RX_Max=16, .pTX_BUFF=0, .lTX=0, .pRX_BUFF=0, .lRX=0, .SendState=EP_SEND_READY},
-  {.Number=1, .Type=EP_INTERRUPT,   .TX_Max=16, .RX_Max=16, .pTX_BUFF=0, .lTX=0, .pRX_BUFF=0, .lRX=0, .SendState=EP_SEND_READY}
+  {.Number=0, .Type=EP_CONTROL,     .TX_Max=16, .RX_Max=16, .pTX_BUFF=NULL, .lTX=0, .pRX_BUFF=NULL, .lRX=0, .SendState=EP_SEND_READY},
+  {.Number=1, .Type=EP_INTERRUPT,   .TX_Max=16, .RX_Max=16, .pTX_BUFF=NULL, .lTX=0, .pRX_BUFF=NULL, .lRX=0, .SendState=EP_SEND_READY}
 };
 
 Typedef_OUT_TransactionCollector EP0_Collect=
 {
   .cnt = 0,
   .allocSize = 0,
+  .pData = NULL,
   .state = OUT_COLLECTOR_NOTHING
 };
 
-
 USB_SetupPacket   *SetupPacket;
 uint8_t  DeviceAddress = 0;
-
-uint8_t reportPeriod = 0;
-
-//void StandardRequestHandler();
-//void ClassRequestHandler();
-//******************************************************************************
-void USB_Reset(void)
-{
-    uint16_t Addr = sizeof(BDTable)>>1;
-    for (uint8_t i = 0; i < EPCOUNT; i++) //active endpoints
-     {
-      BDTable[i].TX_Address = Addr;
-      BDTable[i].TX_Count   =  0;
-      Addr += EpData[i].TX_Max;
-      BDTable[i].RX_Address = Addr;
-      if (EpData[i].RX_Max >= 64)
-          BDTable[i].RX_Count = (1<<USB_COUNT_RX_BLSIZE_Pos) | ((EpData[i].RX_Max / 64) << USB_COUNT_RX_NUM_BLOCK_Pos);
-      else
-          BDTable[i].RX_Count = ((EpData[i].RX_Max / 2) << USB_COUNT_RX_NUM_BLOCK_Pos);
-
-      Addr += EpData[i].RX_Max;
-      if (!EpData[i].pRX_BUFF)
-        {
-          EpData[i].pRX_BUFF = (uint16_t *)malloc(EpData[i].RX_Max);
-        #ifdef DEBUG
-          if(EpData[i].pRX_BUFF == 0)
-            exceptionFail();         //memory not provided
-        #endif   
-        }
-      USB->EPR[i] = (EpData[i].Number | EpData[i].Type | RX_VALID | TX_NAK);
-      EpData[i].SendState = EP_SEND_READY;
-      }
-    EP0_Collect.cnt = 0;
-    for (uint8_t i = EPCOUNT; i < 8; i++) //inactive endpoints
-        USB->EPR[i] = i | RX_DISABLE | TX_DISABLE;
-    
-    USB_setDeviceCofig (0);
-    USB->CNTR   = USB_CNTR_CTRM | USB_CNTR_RESETM | USB_CNTR_SUSPM | USB_CNTR_ERRM | USB_CNTR_SOFM;
-    USB->ISTR   = 0x00;
-    USB->BTABLE = 0x00;
-    USB->DADDR  = USB_DADDR_EF; //Enable USB device
-}
-
-//*****************************************************************************
+/* *****************************************************************************
+ Main USB Interrupt Handler
+***************************************************************************** */
 void USB_LP_CAN1_RX0_IRQHandler()
 {
     DWT->CYCCNT = 0;
@@ -194,8 +145,50 @@ void USB_LP_CAN1_RX0_IRQHandler()
     USB->ISTR = 0; //other interrupt
 }
 
+/* *****************************************************************************
+ USb Reset Handler
+***************************************************************************** */
+void USB_Reset(void)
+{
+    uint16_t Addr = sizeof(BDTable)>>1;
+    for (uint8_t i = 0; i < EPCOUNT; i++) //active endpoints
+     {
+      BDTable[i].TX_Address = Addr;
+      BDTable[i].TX_Count   =  0;
+      Addr += EpData[i].TX_Max;
+      BDTable[i].RX_Address = Addr;
+      if (EpData[i].RX_Max >= 64)
+          BDTable[i].RX_Count = (1<<USB_COUNT_RX_BLSIZE_Pos) | ((EpData[i].RX_Max / 64) << USB_COUNT_RX_NUM_BLOCK_Pos);
+      else
+          BDTable[i].RX_Count = ((EpData[i].RX_Max / 2) << USB_COUNT_RX_NUM_BLOCK_Pos);
 
-//*****************************************************************************
+      Addr += EpData[i].RX_Max;
+      if (!EpData[i].pRX_BUFF)
+        {
+          EpData[i].pRX_BUFF = (uint16_t *)malloc(EpData[i].RX_Max);
+        #ifdef DEBUG
+          if(EpData[i].pRX_BUFF == NULL)
+            exceptionFail();         //memory not provided
+        #endif   
+        }
+      USB->EPR[i] = (EpData[i].Number | EpData[i].Type | RX_VALID | TX_NAK);
+      EpData[i].SendState = EP_SEND_READY;
+      }
+    EP0_Collect.cnt = 0;
+    EP0_Collect.state = OUT_COLLECTOR_NOTHING;
+    for (uint8_t i = EPCOUNT; i < 8; i++) //inactive endpoints
+        USB->EPR[i] = i | RX_DISABLE | TX_DISABLE;
+    
+    USB_setDeviceCofig (0);
+    USB->CNTR   = USB_CNTR_CTRM | USB_CNTR_RESETM | USB_CNTR_SUSPM | USB_CNTR_ERRM | USB_CNTR_SOFM;
+    USB->ISTR   = 0x00;
+    USB->BTABLE = 0x00;
+    USB->DADDR  = USB_DADDR_EF; //Enable USB device and set ZERO address
+}
+
+/* *****************************************************************************
+ USB Endpoint Interrupt Handler
+***************************************************************************** */
 void USB_EPHandler(uint16_t Status)
 {
     uint8_t  EPn = Status & ISTR_EP_ID; //endpoint number where occured
@@ -206,10 +199,12 @@ void USB_EPHandler(uint16_t Status)
   #endif
     if (EP & EP_CTR_RX)     //something received ?
     {
+      uint8_t answerDone = 0;
       USB->EPR[EPn] &= 0x78f; //reset flag CTR_RX
     #ifdef SWOLOG
-      pFloat = stradd (pFloat,"\r\n received on EPnum=");
+      pFloat = stradd (pFloat,"\r\nReceived in EP[");
       pFloat = itoa(EPn ,pFloat,10,0);
+      pFloat = stradd (pFloat,"]: ");
     #endif
       USBLIB_Pma2EPBuf(EPn);
       if (EPn == 0)       //Control endpoint ?
@@ -230,12 +225,12 @@ void USB_EPHandler(uint16_t Status)
           if (EP0_Collect.allocSize < EP0_Collect.expectedSize) //has too little allocated mem ?
           {
             free(EP0_Collect.pData);
-            EP0_Collect.pData = 0;
+            EP0_Collect.pData = NULL;
             EP0_Collect.allocSize = 0;
           }          
           if (!EP0_Collect.pData)
           {
-            EP0_Collect.pData = malloc(EP0_Collect.expectedSize);
+            EP0_Collect.pData = (uint8_t*)malloc(EP0_Collect.expectedSize);
             if(EP0_Collect.pData)
               EP0_Collect.allocSize = EP0_Collect.expectedSize;
             else
@@ -243,7 +238,6 @@ void USB_EPHandler(uint16_t Status)
           }
           EP0_Collect.cnt = 0;
           EP0_Collect.state = OUT_COLLECTOR_ASSEMB;
-          USBLIB_SendData(0, 0, 0); //ZPL with ACK
         } 
         else  //it had been received SETUP packet with IN direction in DATA phase
         {
@@ -257,13 +251,11 @@ void USB_EPHandler(uint16_t Status)
             BDTable[0].TX_Count = 0;
             USBLIB_setStatTx(0, TX_STALL);
           }
+          answerDone = 1;
         }        
       } //Setup packet
       else  // non SETUP packet
-      {
-      #ifdef SWOLOG
-        pFloat = printHexMem(EpData[0].pRX_BUFF,pFloat,EpData[0].lRX);
-      #endif 
+      { 
         if (EP0_Collect.state == OUT_COLLECTOR_ASSEMB) //assembling transaction in process ?
         {
           memcpy(EP0_Collect.pData + EP0_Collect.cnt, EpData[0].pRX_BUFF, EpData[0].lRX);
@@ -271,20 +263,23 @@ void USB_EPHandler(uint16_t Status)
         }
       } // non SETUP packet
       
-      // SETUP packet with OUT DATA stage direction is been collected ?
+      // check: SETUP packet with OUT DATA stage direction is been collected ?
       if ((EP0_Collect.state == OUT_COLLECTOR_ASSEMB) &&(EP0_Collect.cnt >= EP0_Collect.expectedSize))
-          {
-            EP0_Collect.state = OUT_COLLECTOR_NOTHING;
-            //CALL parser transaction with out DATA stage
-            if (USB_OUT_requestHandler(SetupPacket, (uint16_t*)EP0_Collect.pData, EP0_Collect.cnt))
-              USBLIB_SendData(0, 0, 0);
-            else
-              {
-                BDTable[0].TX_Count = 0;
-                USBLIB_setStatTx(0, TX_STALL);
-              }
-              
-          }
+        {
+          EP0_Collect.state = OUT_COLLECTOR_NOTHING;
+          //CALL parser transaction with out DATA stage
+          if (!USB_OUT_requestHandler(SetupPacket, (uint16_t*)EP0_Collect.pData, EP0_Collect.cnt))
+            {
+              BDTable[0].TX_Count = 0;
+              USBLIB_setStatTx(0, TX_STALL);
+              answerDone = 1;
+            }   
+        }
+        if (!answerDone)
+        {
+          answerDone = 0;
+          USBLIB_SendData(0, 0, 0); //ACK
+        }
     } //Control endpoint
     
     else 
@@ -292,7 +287,6 @@ void USB_EPHandler(uint16_t Status)
         asm("nop");  // Call user function
       #ifdef SWOLOG
         pFloat = stradd (pFloat,"\r\nGot Data ");
-        pFloat = printHexMem(EpData[EPn].pRX_BUFF,pFloat,EpData[EPn].lRX);
       #endif         
         USBLIB_SendData(EPn, 0, 0);                   //nujno li podtverjdat prinatie dannie
       }// Got data from another EP
@@ -304,8 +298,9 @@ void USB_EPHandler(uint16_t Status)
       {
         USB->EPR[EPn] &= 0x870f;   //reset flag CTR_TX
       #ifdef SWOLOG
-        pFloat = stradd (pFloat, "\r\nTransmit by EPnum=");
+        pFloat = stradd (pFloat, "\r\nTX complete EP[");
         pFloat = itoa(EPn ,pFloat,10,0);
+        pFloat = stradd (pFloat, "] ");
       #endif       
         if (DeviceAddress) 
           {
@@ -320,7 +315,7 @@ void USB_EPHandler(uint16_t Status)
         else 
           {
           #ifdef SWOLOG
-            pFloat = stradd (pFloat," End Transmit ");
+            pFloat = stradd (pFloat," End TX ");
           #endif
           if (EpData[EPn].SendState == EP_SEND_BUSY)
             EpData[EPn].SendState = EP_SEND_READY;
@@ -329,13 +324,20 @@ void USB_EPHandler(uint16_t Status)
 }//void USB_EPHandler
         
         
-//*****************************************************************************
+/* *****************************************************************************
+ This routine initiate Send data. If datasize > EP size it is send first packet
+and stay in queue remaining data
+EPn     - endpoint number
+Data    - pointer to source Data Array
+Length  - size of Data Array
+***************************************************************************** */
 void USBLIB_SendData(uint8_t EPn, uint16_t *Data, uint16_t Length)
 {
   USB->EPR[EPn] &= 0x870f;   //reset flag CTR_TX          //vozmojno zdes nado obnulit flag TC
 #ifdef SWOLOG
-  pFloat = stradd (pFloat, "\r\nPrepare to transmit ");
+  pFloat = stradd (pFloat, "\r\nStart TX ");
   pFloat = itoa(Length ,pFloat,10,0);
+  pFloat = stradd (pFloat, " b ");
 #endif
   EpData[EPn].lTX = Length;
   EpData[EPn].pTX_BUFF = Data;
@@ -357,19 +359,21 @@ void USBLIB_Pma2EPBuf(uint8_t EPn)
   uint32_t *Address = (uint32_t *)(USB_PMAADDR + BDTable[EPn].RX_Address * 2);
   uint16_t *Distination = (uint16_t *)EpData[EPn].pRX_BUFF;
   uint8_t   Count = EpData[EPn].lRX = (BDTable[EPn].RX_Count & BDT_COUNTn_RX_Msk);
-#ifdef SWOLOG    
-  pFloat = stradd (pFloat, "\r\nPMA[");
-  pFloat = itoa(EPn ,pFloat,10,0);
-  pFloat = stradd (pFloat, "]->Buffer ");
-  pFloat = itoa(Count ,pFloat,10,0);
-  pFloat = stradd (pFloat, " bytes ");
-#endif  
+  
   for (uint8_t i = 0; i < Count; i++)
   {
     *(uint16_t *)Distination = *(uint16_t *)Address;
     Distination++;
     Address++;
   }
+  #ifdef SWOLOG    
+  pFloat = stradd (pFloat, "\r\nPMA[");
+  pFloat = itoa(EPn ,pFloat,10,0);
+  pFloat = stradd (pFloat, "]->Buffer ");
+  pFloat = itoa(Count ,pFloat,10,0);
+  pFloat = stradd (pFloat, " b: ");
+  pFloat = printHexMem(EpData[EPn].pRX_BUFF,pFloat, Count);
+#endif
 }
 
 /* ****************************************************************************
@@ -384,12 +388,13 @@ void USBLIB_EPBuf2Pma(uint8_t EPn)
   Count  = EpData[EPn].lTX <= EpData[EPn].TX_Max ? EpData[EPn].lTX : EpData[EPn].TX_Max;
   BDTable[EPn].TX_Count = Count;
   Distination = (uint32_t *)(USB_PMAADDR + BDTable[EPn].TX_Address * 2);
-#ifdef SWOLOG
+  #ifdef SWOLOG
   pFloat = stradd (pFloat, "\r\nBuffer->PMA[");
   pFloat = itoa(EPn ,pFloat,10,0);
   pFloat = stradd (pFloat, "] ");
   pFloat = itoa(Count ,pFloat,10,0);
-  pFloat = stradd (pFloat, " bytes ");
+  pFloat = stradd (pFloat, " b: ");
+  pFloat = printHexMem(EpData[EPn].pTX_BUFF,pFloat, Count);
 #endif
   for (uint8_t i = 0; i < (Count + 1) / 2; i++) 
   {
