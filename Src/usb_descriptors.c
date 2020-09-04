@@ -108,9 +108,9 @@ const uint8_t aStringDescriptors2[]=
 
 const uint8_t aStringDescriptors3[]=
 {
-    18,                 // bLength
+    12,                 // bLength
     USB_STR_DESC_TYPE,  //bDescriptorType
-    '3',0, '0',0, '0',0, '8',0, '2',0, '0',0, '2',0, '0',0,  //Product
+    '0',0, '0',0, '0',0, '0',0, '0',0  //Product
 };
 
 static const uint8_t HID_Sensor_ReportDesc[184] =

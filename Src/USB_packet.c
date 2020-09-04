@@ -14,7 +14,7 @@ __no_init volatile USB_BDT BDTable[EPCOUNT] @ USB_PMAADDR ; //Buffer Description
 #ifdef SWOLOG
   char *loggingSetupPacket(USB_SetupPacket *pSetup, char *pdst);
   void putlog();
-  char debugBuf[512];
+  char debugBuf[768];
   char *pFloat;
 #endif
 
@@ -32,6 +32,7 @@ Typedef_OUT_TransactionCollector EP0_Collect=
   .state = OUT_COLLECTOR_NOTHING
 };
 
+USB_SetupPacket   SetupPacketStorage;
 USB_SetupPacket   *SetupPacket;
 uint8_t  DeviceAddress = 0;
 /* *****************************************************************************
@@ -193,25 +194,27 @@ void USB_EPHandler(uint16_t Status)
 {
     uint8_t  EPn = Status & ISTR_EP_ID; //endpoint number where occured
     uint32_t EP  = USB->EPR[EPn];
+    uint8_t needAnswer = 0; //flag need ZLP or initiate send data
   #ifdef SWOLOG
     pFloat = stradd (pFloat,"\r\nEP=");
     pFloat = itoa(EP ,pFloat,2,0);
   #endif
     if (EP & EP_CTR_RX)     //something received ?
     {
-      uint8_t answerDone = 0;
       USB->EPR[EPn] &= 0x78f; //reset flag CTR_RX
     #ifdef SWOLOG
       pFloat = stradd (pFloat,"\r\nReceived in EP[");
       pFloat = itoa(EPn ,pFloat,10,0);
       pFloat = stradd (pFloat,"]: ");
     #endif
-      USBLIB_Pma2EPBuf(EPn);
+      USBLIB_Pma2EPBuf(EPn);  //move incoming to EP Buffer
+      if (EpData[EPn].lRX > 0)  //have useful packet (non ZLP ACK) - need answer something
+          needAnswer = 1;
       if (EPn == 0)       //Control endpoint ?
       { 
         if (EP & USB_EP0R_SETUP) 
         {
-        SetupPacket = (USB_SetupPacket *)EpData[EPn].pRX_BUFF;
+        SetupPacket = (USB_SetupPacket *) memcpy (&SetupPacketStorage, EpData[EPn].pRX_BUFF, sizeof(USB_SetupPacket)); //reserve copy SETUP packet
         EP0_Collect.state = OUT_COLLECTOR_NOTHING;
       #ifdef SWOLOG
         pFloat = stradd (pFloat,"\r\nSETUP ");
@@ -222,19 +225,23 @@ void USB_EPHandler(uint16_t Status)
         if ((SetupPacket->bmRequestType & USB_REQUEST_DIR) == USB_REQUEST_DIR_OUT)
         {
           EP0_Collect.expectedSize = SetupPacket->wLength;     //how many bytes need to save expected Data packets
-          if (EP0_Collect.allocSize < EP0_Collect.expectedSize) //has too little allocated mem ?
+          if (EP0_Collect.expectedSize) //it needs memory for OUT DATA stage ?
           {
-            free(EP0_Collect.pData);
-            EP0_Collect.pData = NULL;
-            EP0_Collect.allocSize = 0;
-          }          
-          if (!EP0_Collect.pData)
-          {
-            EP0_Collect.pData = (uint8_t*)malloc(EP0_Collect.expectedSize);
-            if(EP0_Collect.pData)
-              EP0_Collect.allocSize = EP0_Collect.expectedSize;
-            else
-              exceptionFail(); //memory didn't provide
+            if (EP0_Collect.allocSize < EP0_Collect.expectedSize) //has too little allocated mem ?
+            {
+              free(EP0_Collect.pData);
+              EP0_Collect.pData = NULL;
+              EP0_Collect.allocSize = 0;
+            }          
+            if (!EP0_Collect.pData)
+            {
+              EP0_Collect.pData = (uint8_t*)malloc(EP0_Collect.expectedSize);
+              if(EP0_Collect.pData)
+                EP0_Collect.allocSize = EP0_Collect.expectedSize;
+              else
+                exceptionFail(); //memory didn't provide
+            }
+            needAnswer = 0; //Answer ZLP will be send after whole transaction (after DATA stage)
           }
           EP0_Collect.cnt = 0;
           EP0_Collect.state = OUT_COLLECTOR_ASSEMB;
@@ -251,15 +258,20 @@ void USB_EPHandler(uint16_t Status)
             BDTable[0].TX_Count = 0;
             USBLIB_setStatTx(0, TX_STALL);
           }
-          answerDone = 1;
+          needAnswer = 0;
         }        
       } //Setup packet
       else  // non SETUP packet
       { 
         if (EP0_Collect.state == OUT_COLLECTOR_ASSEMB) //assembling transaction in process ?
         {
-          memcpy(EP0_Collect.pData + EP0_Collect.cnt, EpData[0].pRX_BUFF, EpData[0].lRX);
-          EP0_Collect.cnt += EpData[0].lRX;
+          uint16_t remainingSize = EP0_Collect.expectedSize - EP0_Collect.cnt;
+          uint16_t sizeToAdd = (remainingSize > EpData[0].lRX) ? EpData[0].lRX : remainingSize; //it's protection allocated memory  owerflow
+          if (sizeToAdd)
+          {
+            memcpy(EP0_Collect.pData + EP0_Collect.cnt, EpData[0].pRX_BUFF, sizeToAdd);
+            EP0_Collect.cnt += sizeToAdd;
+          }
         }
       } // non SETUP packet
       
@@ -272,13 +284,8 @@ void USB_EPHandler(uint16_t Status)
             {
               BDTable[0].TX_Count = 0;
               USBLIB_setStatTx(0, TX_STALL);
-              answerDone = 1;
+              needAnswer = 0;
             }   
-        }
-        if (!answerDone)
-        {
-          answerDone = 0;
-          USBLIB_SendData(0, 0, 0); //ACK
         }
     } //Control endpoint
     
@@ -288,11 +295,14 @@ void USB_EPHandler(uint16_t Status)
       #ifdef SWOLOG
         pFloat = stradd (pFloat,"\r\nGot Data ");
       #endif         
-        USBLIB_SendData(EPn, 0, 0);                   //nujno li podtverjdat prinatie dannie
       }// Got data from another EP
-                                                                      
       USBLIB_setStatRx(EPn, RX_VALID);
-    }//something received
+      if (needAnswer)
+        {
+          needAnswer = 0;
+          USBLIB_SendData(EPn, 0, 0); //ACK
+        }                                                                
+    } //something received
     
     if (EP & EP_CTR_TX) //something transmitted
       {

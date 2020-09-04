@@ -117,7 +117,7 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
   else if ((pSetup->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_CLASS)
     {
     #ifdef SWOLOG
-      pFloat = stradd (pFloat,"\r\nCLASS HID");
+      pFloat = stradd (pFloat,"\r\nCLASS HID ");
     #endif
      switch (pSetup->bRequest) 
       {
@@ -264,13 +264,13 @@ uint8_t USB_OUT_requestHandler(USB_SetupPacket *pSetup, uint16_t *pDataOut, uint
   else if ((pSetup->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_CLASS)
     {
    #ifdef SWOLOG
-    pFloat = stradd (pFloat,"\r\nCLASS HID");
+    pFloat = stradd (pFloat,"\r\nCLASS HID ");
   #endif
       switch (pSetup->bRequest)
       {
         case USB_HID_SET_IDLE:
         #ifdef SWOLOG
-          pFloat = stradd (pFloat,"Set Idle");
+          pFloat = stradd (pFloat,"SET_IDLE");
         #endif
           IdleRate = pSetup->wValue.H;
           break;
@@ -283,7 +283,7 @@ uint8_t USB_OUT_requestHandler(USB_SetupPacket *pSetup, uint16_t *pDataOut, uint
         
         case USB_HID_SET_REPORT:
         #ifdef SWOLOG
-          pFloat = stradd (pFloat,"Set Report ");
+          pFloat = stradd (pFloat,"SET_REPORT ");
         #endif
           switch(pSetup->wValue.H)
           {

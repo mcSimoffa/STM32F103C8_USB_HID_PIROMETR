@@ -31,12 +31,13 @@ void USB_SetFeature(uint8_t reportN, uint8_t *pReport, uint16_t len);
 struct  //it described in section "feature reports" HID Report Descriptor
   {
     uint32_t  interval;
-    int16_t  minimum;
     int16_t  maximum;
+    int16_t  minimum;
   } HID_SenrorFeature={
-    .interval = 100,
-    .minimum = -400,
-    .maximum = 15000};
+    .interval = 32,
+    .maximum = 15000,
+    .minimum = -4000
+    };
 
 struct  //it described in section "input reports (transmit)" HID Report Descriptor
 {

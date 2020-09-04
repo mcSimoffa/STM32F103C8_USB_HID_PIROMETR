@@ -1,24 +1,52 @@
- 
+
+
 
 ---------
 Time=1
 ISTR=B0100 0000 0000
 FNR=B1000 0000 0000 0000
-RESET Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp Sp 
+RESET
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+ S
+
 
 ---------
-Time=158
+Time=157
 ISTR=B0101 0000 0000
 FNR=B1000 0000 0000 0000
-RESET 
+RESET
+
 
 ---------
-Time=191
+Time=190
 ISTR=B1000 0000 0001 0000
-FNR=B1010 0100 0101 0000
+FNR=B0110 0101 0111 0111
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x0 0x1 0x0 0x0 0x40 0x0 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -27,56 +55,61 @@ wValue.L= 0
 wIndex= 0
 wLength= 64
 STANDARD GET_DESCRIPTOR DEVICE
-Prepare to transmit 18
-Buffer->PMA[0] 16 bytes  
+Start TX 18 b 
+Buffer->PMA[0] 16 b: 0x12 0x1 0x0 0x2 0x0 0x0 0x0 0x10 0x9 0x12 0x1 0x0 0x0 0x2 0x1 0x2 
+
 
 ---------
-Time=191
+Time=190
 ISTR=B1000 0000 0000 0000
-FNR=B1010 0100 0101 0000
+FNR=B1010 0101 0111 0111
 EP=B1010 0010 1010 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0
-Buffer->PMA[0] 2 bytes  
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0] 
+Buffer->PMA[0] 2 b: 0x3 0x1 
+
 
 ---------
 Time=248
 ISTR=B0100 0000 0000
-FNR=B1000 0100 0101 0000
-RESET 
+FNR=B1000 0101 0111 0111
+RESET
+
 
 ---------
 Time=281
 ISTR=B1000 0000 0001 0000
-FNR=B1010 0100 1010 1010
+FNR=B1110 0101 1101 0001
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x0 0x5 0x29 0x0 0x0 0x0 0x0 0x0 
 SETUP 
 bmRequestType=B0000
 bRequest=5
 wValue.H= 0
-wValue.L= 13
+wValue.L= 41
 wIndex= 0
 wLength= 0
 STANDARD SET_ADDRESS
-Prepare to transmit 0 
+Start TX 0 b 
+
 
 ---------
 Time=281
-ISTR=B1000 0000 0000 0000
-FNR=B1010 0100 1010 1010
+ISTR=B0010 0000 0000
+FNR=B1010 0101 1101 0010
 EP=B0111 0010 1010 0000
-Transmit by EPnum=0 End Transmit  
+TX complete EP[0]  End TX 
+
 
 ---------
 Time=292
 ISTR=B1000 0000 0001 0000
-FNR=B1010 0100 1011 0101
+FNR=B1010 0101 1101 1100
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x0 0x1 0x0 0x0 0x12 0x0 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -85,33 +118,36 @@ wValue.L= 0
 wIndex= 0
 wLength= 18
 STANDARD GET_DESCRIPTOR DEVICE
-Prepare to transmit 18
-Buffer->PMA[0] 16 bytes  
+Start TX 18 b 
+Buffer->PMA[0] 16 b: 0x12 0x1 0x0 0x2 0x0 0x0 0x0 0x10 0x9 0x12 0x1 0x0 0x0 0x2 0x1 0x2 
+
 
 ---------
 Time=292
-ISTR=B1000 0000 0000 0000
-FNR=B1010 0100 1011 0101
+ISTR=B0010 0000 0000
+FNR=B1010 0101 1101 1101
 EP=B0111 0010 1010 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 2 bytes  
+TX complete EP[0] 
+Buffer->PMA[0] 2 b: 0x3 0x1 
+
 
 ---------
 Time=292
-ISTR=B1000 0000 0000 0000
-FNR=B1010 0100 1011 0101
+ISTR=B0010 0000 0000
+FNR=B1010 0101 1101 1101
 EP=B1010 0010 1110 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
 
 ---------
 Time=293
 ISTR=B1000 0000 0001 0000
-FNR=B0110 0100 1011 0110
+FNR=B0010 0101 1101 1110
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x0 0x2 0x0 0x0 0xFF 0x0 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -120,41 +156,45 @@ wValue.L= 0
 wIndex= 0
 wLength= 255
 STANDARD GET_DESCRIPTOR CONFIG
-Prepare to transmit 41
-Buffer->PMA[0] 16 bytes  
+Start TX 41 b 
+Buffer->PMA[0] 16 b: 0x9 0x2 0x29 0x0 0x1 0x1 0x0 0x80 0x32 0x9 0x4 0x0 0x0 0x2 0x3 0x0 
+
 
 ---------
-Time=293
+Time=294
 ISTR=B1000 0000 0000 0000
-FNR=B1010 0100 1011 0110
+FNR=B1010 0101 1101 1110
 EP=B0111 0010 1010 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 16 bytes  
+TX complete EP[0] 
+Buffer->PMA[0] 16 b: 0x0 0x0 0x9 0x21 0x11 0x1 0x0 0x1 0x22 0xB8 0x0 0x7 0x5 0x81 0x3 0x10 
+
 
 ---------
-Time=293
-ISTR=B0010 0000 0000
-FNR=B1010 0100 1011 0111
+Time=294
+ISTR=B1000 0000 0000 0000
+FNR=B1010 0101 1101 1110
 EP=B0111 0010 1110 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 9 bytes  
+TX complete EP[0] 
+Buffer->PMA[0] 9 b: 0x0 0x20 0x7 0x5 0x1 0x3 0x10 0x0 0x20 
+
 
 ---------
-Time=293
-ISTR=B0010 0000 0000
-FNR=B1010 0100 1011 0111
+Time=294
+ISTR=B1000 0000 0000 0000
+FNR=B1010 0101 1101 1110
 EP=B1010 0010 1010 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
 
 ---------
-Time=293
-ISTR=B0010 0000 0000
-FNR=B1010 0100 1011 0111
-EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Time=294
+ISTR=B1000 0000 0001 0000
+FNR=B0110 0101 1101 1110
+EP=B1111 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x3 0x3 0x9 0x4 0xFF 0x0 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -163,33 +203,27 @@ wValue.L= 3
 wIndex= 9
 wLength= 255
 STANDARD GET_DESCRIPTOR STRING
-Prepare to transmit 18
-Buffer->PMA[0] 16 bytes  
+Start TX 12 b 
+Buffer->PMA[0] 12 b: 0xC 0x3 0x30 0x0 0x30 0x0 0x30 0x0 0x30 0x0 0x30 0x0 
+
 
 ---------
-Time=293
-ISTR=B0010 0000 0000
-FNR=B1010 0100 1011 0111
-EP=B0111 0010 1010 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 2 bytes  
+Time=294
+ISTR=B1000 0010 0000 0000
+FNR=B1010 0101 1101 1111
+EP=B1010 0010 1010 0000
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
 
 ---------
-Time=293
-ISTR=B0010 0000 0000
-FNR=B1010 0100 1011 0111
-EP=B1010 0010 1110 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
-
----------
-Time=293
+Time=294
 ISTR=B1000 0010 0001 0000
-FNR=B1110 0100 1011 0111
+FNR=B1010 0101 1101 1111
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x0 0x3 0x0 0x0 0xFF 0x0 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -198,25 +232,27 @@ wValue.L= 0
 wIndex= 0
 wLength= 255
 STANDARD GET_DESCRIPTOR STRING
-Prepare to transmit 4
-Buffer->PMA[0] 4 bytes  
+Start TX 4 b 
+Buffer->PMA[0] 4 b: 0x4 0x3 0x9 0x4 
+
 
 ---------
-Time=293
+Time=294
 ISTR=B0010 0000 0000
-FNR=B1010 0100 1011 0111
+FNR=B0010 0101 1101 1111
 EP=B1010 0010 1010 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
 
 ---------
-Time=293
+Time=294
 ISTR=B1000 0010 0001 0000
-FNR=B1010 0100 1011 0111
-EP=B1111 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+FNR=B1010 0101 1101 1111
+EP=B1110 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x2 0x3 0x9 0x4 0xFF 0x0 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -225,33 +261,36 @@ wValue.L= 2
 wIndex= 9
 wLength= 255
 STANDARD GET_DESCRIPTOR STRING
-Prepare to transmit 20
-Buffer->PMA[0] 16 bytes  
+Start TX 20 b 
+Buffer->PMA[0] 16 b: 0x14 0x3 0x50 0x0 0x69 0x0 0x72 0x0 0x6F 0x0 0x6D 0x0 0x65 0x0 0x74 0x0 
 
----------
-Time=293
-ISTR=B1000 0010 0000 0000
-FNR=B0110 0100 1011 1000
-EP=B0111 0010 1010 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 4 bytes  
-
----------
-Time=293
-ISTR=B0010 0000 0000
-FNR=B1010 0100 1011 1000
-EP=B1010 0010 1110 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
 
 ---------
 Time=294
-ISTR=B1000 0000 0001 0000
-FNR=B1010 0100 1011 1000
-EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+ISTR=B1000 0010 0000 0000
+FNR=B1010 0101 1101 1111
+EP=B0111 0010 1010 0000
+TX complete EP[0] 
+Buffer->PMA[0] 4 b: 0x65 0x0 0x72 0x0 
+
+
+---------
+Time=294
+ISTR=B0010 0000 0000
+FNR=B1010 0101 1101 1111
+EP=B1010 0010 1110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
+
+---------
+Time=294
+ISTR=B1000 0010 0001 0000
+FNR=B1010 0101 1110 0000
+EP=B1111 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x0 0x6 0x0 0x0 0xA 0x0 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -259,15 +298,16 @@ wValue.H= 6
 wValue.L= 0
 wIndex= 0
 wLength= 10
-STANDARD GET_DESCRIPTOR QUALIF 
+STANDARD GET_DESCRIPTOR QUALIF
+
 
 ---------
 Time=366
 ISTR=B1000 0000 0001 0000
-FNR=B0110 0101 0000 0000
+FNR=B1010 0110 0010 0111
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x0 0x1 0x0 0x0 0x12 0x0 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -276,33 +316,36 @@ wValue.L= 0
 wIndex= 0
 wLength= 18
 STANDARD GET_DESCRIPTOR DEVICE
-Prepare to transmit 18
-Buffer->PMA[0] 16 bytes  
+Start TX 18 b 
+Buffer->PMA[0] 16 b: 0x12 0x1 0x0 0x2 0x0 0x0 0x0 0x10 0x9 0x12 0x1 0x0 0x0 0x2 0x1 0x2 
+
 
 ---------
 Time=366
 ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0000 0000
+FNR=B1010 0110 0010 0111
 EP=B0111 0010 1010 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 2 bytes  
+TX complete EP[0] 
+Buffer->PMA[0] 2 b: 0x3 0x1 
+
 
 ---------
-Time=366
+Time=367
 ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0000 0000
+FNR=B1010 0110 0010 0111
 EP=B1010 0010 1110 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
 
 ---------
-Time=366
+Time=367
 ISTR=B1000 0000 0001 0000
-FNR=B1010 0101 0000 0000
-EP=B1111 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+FNR=B1010 0110 0010 0111
+EP=B1110 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x0 0x2 0x0 0x0 0x9 0x0 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -311,25 +354,27 @@ wValue.L= 0
 wIndex= 0
 wLength= 9
 STANDARD GET_DESCRIPTOR CONFIG
-Prepare to transmit 9
-Buffer->PMA[0] 9 bytes  
+Start TX 9 b 
+Buffer->PMA[0] 9 b: 0x9 0x2 0x29 0x0 0x1 0x1 0x0 0x80 0x32 
+
 
 ---------
-Time=366
+Time=367
 ISTR=B1000 0000 0000 0000
-FNR=B0110 0101 0000 0000
+FNR=B1010 0110 0010 0111
 EP=B1010 0010 1010 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
 
 ---------
-Time=366
-ISTR=B1000 0010 0001 0000
-FNR=B1010 0101 0000 0001
+Time=367
+ISTR=B1000 0000 0001 0000
+FNR=B1010 0110 0010 0111
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x0 0x2 0x0 0x0 0x29 0x0 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -338,41 +383,45 @@ wValue.L= 0
 wIndex= 0
 wLength= 41
 STANDARD GET_DESCRIPTOR CONFIG
-Prepare to transmit 41
-Buffer->PMA[0] 16 bytes  
+Start TX 41 b 
+Buffer->PMA[0] 16 b: 0x9 0x2 0x29 0x0 0x1 0x1 0x0 0x80 0x32 0x9 0x4 0x0 0x0 0x2 0x3 0x0 
 
----------
-Time=366
-ISTR=B1000 0010 0000 0000
-FNR=B1010 0101 0000 0001
-EP=B0111 0010 1010 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 16 bytes  
-
----------
-Time=366
-ISTR=B0010 0000 0000
-FNR=B1010 0101 0000 0001
-EP=B0111 0010 1110 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 9 bytes  
-
----------
-Time=366
-ISTR=B0010 0000 0000
-FNR=B1010 0101 0000 0001
-EP=B1010 0010 1010 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
 
 ---------
 Time=367
-ISTR=B1000 0000 0001 0000
-FNR=B0110 0101 0000 0001
+ISTR=B0010 0000 0000
+FNR=B0110 0110 0010 1000
+EP=B0111 0010 1010 0000
+TX complete EP[0] 
+Buffer->PMA[0] 16 b: 0x0 0x0 0x9 0x21 0x11 0x1 0x0 0x1 0x22 0xB8 0x0 0x7 0x5 0x81 0x3 0x10 
+
+
+---------
+Time=367
+ISTR=B0010 0000 0000
+FNR=B1010 0110 0010 1000
+EP=B0111 0010 1110 0000
+TX complete EP[0] 
+Buffer->PMA[0] 9 b: 0x0 0x20 0x7 0x5 0x1 0x3 0x10 0x0 0x20 
+
+
+---------
+Time=367
+ISTR=B0010 0000 0000
+FNR=B1010 0110 0010 1000
+EP=B1010 0010 1010 0000
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
+
+---------
+Time=367
+ISTR=B0010 0000 0000
+FNR=B0110 0110 0010 1000
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x0 0x9 0x1 0x0 0x0 0x0 0x0 0x0 
 SETUP 
 bmRequestType=B0000
 bRequest=9
@@ -381,38 +430,50 @@ wValue.L= 1
 wIndex= 0
 wLength= 0
 STANDARD SET_CONF
-Prepare to transmit 0 
+Start TX 0 b 
+
 
 ---------
 Time=367
-ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0000 0001
+ISTR=B0010 0000 0000
+FNR=B1010 0110 0010 1000
 EP=B0111 0010 1010 0000
-Transmit by EPnum=0 End Transmit  
+TX complete EP[0]  End TX 
+
 
 ---------
-Time=367
-ISTR=B1000 0000 0001 0000
-FNR=B1010 0101 0000 0010
+Time=368
+ISTR=B0010 0000 0000
+FNR=B1010 0110 0010 1001
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x21 0xA 0x0 0x0 0x0 0x0 0x0 0x0 
 SETUP 
 bmRequestType=B0010 0001
 bRequest=10
 wValue.H= 0
 wValue.L= 0
 wIndex= 0
-wLength= 0 CLASS Set Idle
-Prepare to transmit 0 
+wLength= 0
+CLASS HID SET_IDLE
+Start TX 0 b 
+
 
 ---------
-Time=367
-ISTR=B1000 0000 0000 0000
-FNR=B0110 0101 0000 0010
-EP=B1110 1010 1110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Time=368
+ISTR=B0010 0000 0000
+FNR=B1010 0110 0010 1001
+EP=B0111 0010 1010 0000
+TX complete EP[0]  End TX 
+
+
+---------
+Time=368
+ISTR=B1000 0010 0001 0000
+FNR=B1010 0110 0010 1001
+EP=B1110 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x81 0x6 0x0 0x22 0x0 0x0 0xF8 0x0 
 SETUP 
 bmRequestType=B1000 0001
 bRequest=6
@@ -421,107 +482,126 @@ wValue.L= 0
 wIndex= 0
 wLength= 248
 STANDARD GET_DESCRIPTOR REPORT
-Prepare to transmit 184
-Buffer->PMA[0] 16 bytes 
-Transmit by EPnum=0
-Buffer->PMA[0] 16 bytes  
+Start TX 184 b 
+Buffer->PMA[0] 16 b: 0x5 0x20 0x9 0x33 0xA1 0x0 0x5 0x20 0xA 0xE 0x3 0x15 0x0 0x27 0xFF 0xFF 
 
----------
-Time=367
-ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0000 0010
-EP=B0111 0010 1110 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 16 bytes  
 
 ---------
 Time=368
-ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0000 0010
+ISTR=B0010 0000 0000
+FNR=B1010 0110 0010 1001
 EP=B0111 0010 1010 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 16 bytes  
+TX complete EP[0] 
+Buffer->PMA[0] 16 b: 0xFF 0xFF 0x75 0x20 0x95 0x1 0x55 0x0 0xB1 0x2 0xA 0x34 0x24 0x16 0x1 0x80 
+
 
 ---------
 Time=368
-ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0000 0010
+ISTR=B0010 0000 0000
+FNR=B1010 0110 0010 1001
 EP=B0111 0010 1110 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 16 bytes  
+TX complete EP[0] 
+Buffer->PMA[0] 16 b: 0x26 0xFF 0x7F 0x75 0x10 0x95 0x1 0x55 0xE 0xB1 0x2 0xA 0x34 0x34 0x16 0x1 
 
----------
-Time=368
-ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0000 0010
-EP=B0111 0010 1010 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 16 bytes  
 
 ---------
 Time=368
 ISTR=B0010 0000 0000
-FNR=B1010 0101 0000 0011
+FNR=B1010 0110 0010 1001
+EP=B0111 0010 1010 0000
+TX complete EP[0] 
+Buffer->PMA[0] 16 b: 0x80 0x26 0xFF 0x7F 0x75 0x10 0x95 0x1 0x55 0xE 0xB1 0x2 0x5 0x20 0xA 0x1 
+
+
+---------
+Time=368
+ISTR=B0010 0000 0000
+FNR=B0110 0110 0010 1001
 EP=B0111 0010 1110 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 16 bytes  
+TX complete EP[0] 
+Buffer->PMA[0] 16 b: 0x2 0x15 0x0 0x25 0x6 0x75 0x8 0x95 0x1 0xA1 0x2 0xA 0x0 0x8 0xA 0x1 
+
 
 ---------
 Time=368
 ISTR=B0010 0000 0000
-FNR=B1010 0101 0000 0011
+FNR=B1010 0110 0010 1010
 EP=B0111 0010 1010 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 16 bytes  
+TX complete EP[0] 
+Buffer->PMA[0] 16 b: 0x8 0xA 0x2 0x8 0xA 0x3 0x8 0xA 0x4 0x8 0xA 0x5 0x8 0xA 0x6 0x8 
+
 
 ---------
 Time=368
 ISTR=B0010 0000 0000
-FNR=B1010 0101 0000 0011
+FNR=B1010 0110 0010 1010
 EP=B0111 0010 1110 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 16 bytes  
+TX complete EP[0] 
+Buffer->PMA[0] 16 b: 0x81 0x0 0xC0 0xA 0x2 0x2 0x15 0x0 0x25 0x10 0x75 0x8 0x95 0x1 0xA1 0x2 
+
 
 ---------
 Time=368
 ISTR=B0010 0000 0000
-FNR=B1010 0101 0000 0011
+FNR=B1010 0110 0010 1010
 EP=B0111 0010 1010 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 16 bytes  
+TX complete EP[0] 
+Buffer->PMA[0] 16 b: 0xA 0x10 0x8 0xA 0x11 0x8 0xA 0x12 0x8 0xA 0x13 0x8 0xA 0x14 0x8 0xA 
+
 
 ---------
 Time=368
 ISTR=B0010 0000 0000
-FNR=B1010 0101 0000 0011
+FNR=B1010 0110 0010 1010
 EP=B0111 0010 1110 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 16 bytes  
+TX complete EP[0] 
+Buffer->PMA[0] 16 b: 0x15 0x8 0xA 0x16 0x8 0xA 0x17 0x8 0xA 0x18 0x8 0xA 0x19 0x8 0xA 0x1A 
+
 
 ---------
 Time=368
 ISTR=B0010 0000 0000
-FNR=B1010 0101 0000 0011
+FNR=B1010 0110 0010 1010
 EP=B0111 0010 1010 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 8 bytes  
+TX complete EP[0] 
+Buffer->PMA[0] 16 b: 0x8 0xA 0x1B 0x8 0xA 0x1C 0x8 0xA 0x1D 0x8 0xA 0x1E 0x8 0xA 0x1F 0x8 
+
 
 ---------
 Time=368
 ISTR=B0010 0000 0000
-FNR=B0110 0101 0000 0011
+FNR=B1010 0110 0010 1010
+EP=B0111 0010 1110 0000
+TX complete EP[0] 
+Buffer->PMA[0] 16 b: 0xA 0x20 0x8 0x81 0x0 0xC0 0xA 0x34 0x4 0x16 0x1 0x80 0x26 0xFF 0x7F 0x75 
+
+
+---------
+Time=368
+ISTR=B0010 0000 0000
+FNR=B1010 0110 0010 1010
+EP=B0111 0010 1010 0000
+TX complete EP[0] 
+Buffer->PMA[0] 8 b: 0x10 0x95 0x1 0x55 0xE 0x81 0x2 0xC0 
+
+
+---------
+Time=368
+ISTR=B0010 0000 0000
+FNR=B1010 0110 0010 1010
 EP=B1010 0010 1110 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
 
 ---------
-Time=379
+Time=383
 ISTR=B1000 0000 0001 0000
-FNR=B1010 0101 0000 1110
+FNR=B1010 0110 0011 1000
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x0 0x6 0x0 0x0 0xA 0x0 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -529,15 +609,16 @@ wValue.H= 6
 wValue.L= 0
 wIndex= 0
 wLength= 10
-STANDARD GET_DESCRIPTOR QUALIF 
+STANDARD GET_DESCRIPTOR QUALIF
+
 
 ---------
-Time=382
+Time=386
 ISTR=B1000 0000 0001 0000
-FNR=B1010 0101 0001 0001
+FNR=B0110 0110 0011 1011
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x0 0x3 0x0 0x0 0xFE 0x1 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -546,25 +627,27 @@ wValue.L= 0
 wIndex= 0
 wLength= 510
 STANDARD GET_DESCRIPTOR STRING
-Prepare to transmit 4
-Buffer->PMA[0] 4 bytes  
+Start TX 4 b 
+Buffer->PMA[0] 4 b: 0x4 0x3 0x9 0x4 
+
 
 ---------
-Time=383
-ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0001 0001
-EP=B1010 0010 1010 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
-
----------
-Time=383
+Time=386
 ISTR=B1000 0000 0001 0000
-FNR=B1110 0101 0001 0001
+FNR=B1010 0110 0011 1011
+EP=B1010 0010 1010 0000
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
+
+---------
+Time=387
+ISTR=B1000 0000 0001 0000
+FNR=B1010 0110 0011 1100
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x1 0x3 0x9 0x4 0xFE 0x1 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -573,41 +656,45 @@ wValue.L= 1
 wIndex= 9
 wLength= 510
 STANDARD GET_DESCRIPTOR STRING
-Prepare to transmit 36
-Buffer->PMA[0] 16 bytes  
+Start TX 36 b 
+Buffer->PMA[0] 16 b: 0x24 0x3 0x4D 0x0 0x61 0x0 0x78 0x0 0x69 0x0 0x6D 0x0 0x6F 0x0 0x20 0x0 
+
 
 ---------
-Time=383
-ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0001 0001
-EP=B0111 0010 1010 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 16 bytes  
-
----------
-Time=383
-ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0001 0001
-EP=B0111 0010 1110 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 4 bytes  
-
----------
-Time=383
+Time=387
 ISTR=B0010 0000 0000
-FNR=B1010 0101 0001 0010
-EP=B1010 0010 1010 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
+FNR=B1010 0110 0011 1101
+EP=B0111 0010 1010 0000
+TX complete EP[0] 
+Buffer->PMA[0] 16 b: 0x54 0x0 0x65 0x0 0x63 0x0 0x68 0x0 0x6E 0x0 0x6F 0x0 0x6C 0x0 0x6F 0x0 
+
 
 ---------
-Time=384
+Time=387
+ISTR=B0010 0000 0000
+FNR=B1010 0110 0011 1101
+EP=B0111 0010 1110 0000
+TX complete EP[0] 
+Buffer->PMA[0] 4 b: 0x67 0x0 0x79 0x0 
+
+
+---------
+Time=387
+ISTR=B0010 0000 0000
+FNR=B1010 0110 0011 1101
+EP=B1010 0010 1010 0000
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
+
+---------
+Time=389
 ISTR=B1000 0000 0001 0000
-FNR=B0110 0101 0001 0010
+FNR=B1010 0110 0011 1110
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x2 0x3 0x9 0x4 0xFE 0x1 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -616,33 +703,36 @@ wValue.L= 2
 wIndex= 9
 wLength= 510
 STANDARD GET_DESCRIPTOR STRING
-Prepare to transmit 20
-Buffer->PMA[0] 16 bytes  
+Start TX 20 b 
+Buffer->PMA[0] 16 b: 0x14 0x3 0x50 0x0 0x69 0x0 0x72 0x0 0x6F 0x0 0x6D 0x0 0x65 0x0 0x74 0x0 
+
 
 ---------
-Time=384
+Time=389
 ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0001 0010
+FNR=B1010 0110 0011 1110
 EP=B0111 0010 1010 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 4 bytes  
+TX complete EP[0] 
+Buffer->PMA[0] 4 b: 0x65 0x0 0x72 0x0 
+
 
 ---------
-Time=384
+Time=389
 ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0001 0010
+FNR=B1010 0110 0011 1110
 EP=B1010 0010 1110 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
 
 ---------
-Time=384
+Time=391
 ISTR=B1000 0000 0001 0000
-FNR=B0110 0101 0001 0011
+FNR=B1010 0110 0100 0000
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0xEE 0x3 0x9 0x4 0xFE 0x1 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -650,15 +740,16 @@ wValue.H= 3
 wValue.L= 238
 wIndex= 9
 wLength= 510
-STANDARD GET_DESCRIPTOR STRING 
+STANDARD GET_DESCRIPTOR STRING
+
 
 ---------
-Time=398
+Time=395
 ISTR=B1000 0000 0001 0000
-FNR=B0110 0101 0010 0000
+FNR=B1010 0110 0100 0100
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x1 0x3 0x9 0x4 0xFE 0x0 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -667,41 +758,45 @@ wValue.L= 1
 wIndex= 9
 wLength= 254
 STANDARD GET_DESCRIPTOR STRING
-Prepare to transmit 36
-Buffer->PMA[0] 16 bytes  
+Start TX 36 b 
+Buffer->PMA[0] 16 b: 0x24 0x3 0x4D 0x0 0x61 0x0 0x78 0x0 0x69 0x0 0x6D 0x0 0x6F 0x0 0x20 0x0 
+
 
 ---------
-Time=398
+Time=395
 ISTR=B0010 0000 0000
-FNR=B1010 0101 0010 0001
+FNR=B1010 0110 0100 0101
 EP=B0111 0010 1010 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 16 bytes  
+TX complete EP[0] 
+Buffer->PMA[0] 16 b: 0x54 0x0 0x65 0x0 0x63 0x0 0x68 0x0 0x6E 0x0 0x6F 0x0 0x6C 0x0 0x6F 0x0 
+
 
 ---------
-Time=398
+Time=395
 ISTR=B0010 0000 0000
-FNR=B1010 0101 0010 0001
+FNR=B1010 0110 0100 0101
 EP=B0111 0010 1110 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 4 bytes  
+TX complete EP[0] 
+Buffer->PMA[0] 4 b: 0x67 0x0 0x79 0x0 
+
 
 ---------
-Time=398
+Time=395
 ISTR=B0010 0000 0000
-FNR=B1010 0101 0010 0001
+FNR=B0110 0110 0100 0101
 EP=B1010 0010 1010 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
 
 ---------
-Time=399
+Time=396
 ISTR=B1000 0000 0001 0000
-FNR=B0110 0101 0010 0001
+FNR=B1010 0110 0100 0101
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x2 0x3 0x9 0x4 0xFE 0x0 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -710,33 +805,36 @@ wValue.L= 2
 wIndex= 9
 wLength= 254
 STANDARD GET_DESCRIPTOR STRING
-Prepare to transmit 20
-Buffer->PMA[0] 16 bytes  
+Start TX 20 b 
+Buffer->PMA[0] 16 b: 0x14 0x3 0x50 0x0 0x69 0x0 0x72 0x0 0x6F 0x0 0x6D 0x0 0x65 0x0 0x74 0x0 
+
 
 ---------
-Time=399
+Time=396
 ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0010 0001
+FNR=B1010 0110 0100 0101
 EP=B0111 0010 1010 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 4 bytes  
+TX complete EP[0] 
+Buffer->PMA[0] 4 b: 0x65 0x0 0x72 0x0 
+
 
 ---------
-Time=399
-ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0010 0001
+Time=396
+ISTR=B0010 0000 0000
+FNR=B1010 0110 0100 0110
 EP=B1010 0010 1110 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
 
 ---------
-Time=399
-ISTR=B1000 0000 0001 0000
-FNR=B1010 0101 0010 0001
+Time=396
+ISTR=B0010 0000 0000
+FNR=B1010 0110 0100 0110
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x80 0x6 0x3 0x3 0x9 0x4 0xFE 0x0 
 SETUP 
 bmRequestType=B1000 0000
 bRequest=6
@@ -745,297 +843,602 @@ wValue.L= 3
 wIndex= 9
 wLength= 254
 STANDARD GET_DESCRIPTOR STRING
-Prepare to transmit 18
-Buffer->PMA[0] 16 bytes  
+Start TX 12 b 
+Buffer->PMA[0] 12 b: 0xC 0x3 0x30 0x0 0x30 0x0 0x30 0x0 0x30 0x0 0x30 0x0 
+
 
 ---------
-Time=399
+Time=396
 ISTR=B0010 0000 0000
-FNR=B1010 0101 0010 0010
-EP=B0111 0010 1010 0000
-Transmit by EPnum=0
-Buffer->PMA[0] 2 bytes  
+FNR=B1010 0110 0100 0110
+EP=B1010 0010 1010 0000
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
 
 ---------
-Time=399
-ISTR=B0010 0000 0000
-FNR=B1010 0101 0010 0010
-EP=B1010 0010 1110 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
-
----------
-Time=401
+Time=398
 ISTR=B1000 0000 0001 0000
-FNR=B1010 0101 0010 0011
+FNR=B0110 0110 0100 0111
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0xA1 0x1 0x0 0x3 0x0 0x0 0x8 0x0 
 SETUP 
 bmRequestType=B1010 0001
 bRequest=1
 wValue.H= 3
 wValue.L= 0
 wIndex= 0
-wLength= 8 CLASS GET REPORT FEATURE
-Prepare to transmit 8
-Buffer->PMA[0] 8 bytes  
+wLength= 8
+CLASS HID GET REPORT FEATURE
+Start TX 8 b 
+Buffer->PMA[0] 8 b: 0x20 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+
 
 ---------
-Time=401
+Time=398
 ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0010 0011
+FNR=B1010 0110 0100 0111
 EP=B1010 0010 1010 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
 
 ---------
-Time=409
+Time=408
 ISTR=B1000 0000 0001 0000
-FNR=B1010 0101 0010 1011
+FNR=B0110 0110 0101 0010
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0xA1 0x1 0x0 0x3 0x0 0x0 0x8 0x0 
 SETUP 
 bmRequestType=B1010 0001
 bRequest=1
 wValue.H= 3
 wValue.L= 0
 wIndex= 0
-wLength= 8 CLASS GET REPORT FEATURE
-Prepare to transmit 8
-Buffer->PMA[0] 8 bytes  
+wLength= 8
+CLASS HID GET REPORT FEATURE
+Start TX 8 b 
+Buffer->PMA[0] 8 b: 0x20 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+
 
 ---------
 Time=409
 ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0010 1011
+FNR=B1010 0110 0101 0010
 EP=B1010 0010 1010 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
 
 ---------
 Time=409
 ISTR=B1000 0000 0001 0000
-FNR=B1010 0101 0010 1100
+FNR=B1010 0110 0101 0010
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x21 0x9 0x0 0x3 0x0 0x0 0x8 0x0 
 SETUP 
 bmRequestType=B0010 0001
 bRequest=9
 wValue.H= 3
 wValue.L= 0
 wIndex= 0
-wLength= 8 CLASS SET REPORT  
+wLength= 8
+
 
 ---------
-Time=410
+Time=409
 ISTR=B1000 0000 0001 0000
-FNR=B1010 0101 0010 1100
+FNR=B1010 0110 0101 0010
 EP=B1010 0010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 0x64 0x0 0x0 0x0 0x2 0x0 0x3 0x0  FEATURE
-Prepare to transmit 0 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x64 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+CLASS HID SET_REPORT FEATURE
+Start TX 0 b 
+
 
 ---------
-Time=410
+Time=409
 ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0010 1100
+FNR=B1010 0110 0101 0010
 EP=B0011 0010 1010 0000
-Transmit by EPnum=0 End Transmit  
+TX complete EP[0]  End TX 
+
 
 ---------
-Time=410
+Time=409
 ISTR=B1000 0000 0001 0000
-FNR=B1010 0101 0010 1100
+FNR=B1010 0110 0101 0010
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0xA1 0x1 0x0 0x3 0x0 0x0 0x8 0x0 
 SETUP 
 bmRequestType=B1010 0001
 bRequest=1
 wValue.H= 3
 wValue.L= 0
 wIndex= 0
-wLength= 8 CLASS GET REPORT FEATURE
-Prepare to transmit 8
-Buffer->PMA[0] 8 bytes  
+wLength= 8
+CLASS HID GET REPORT FEATURE
+Start TX 8 b 
+Buffer->PMA[0] 8 b: 0x64 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+
 
 ---------
-Time=410
-ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0010 1100
-EP=B1010 0010 1010 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
-
----------
-Time=428
-ISTR=B1000 0000 0001 0000
-FNR=B1010 0101 0011 1111
-EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
-SETUP 
-bmRequestType=B1010 0001
-bRequest=1
-wValue.H= 3
-wValue.L= 0
-wIndex= 0
-wLength= 8 CLASS GET REPORT FEATURE
-Prepare to transmit 8
-Buffer->PMA[0] 8 bytes  
-
----------
-Time=429
-ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0011 1111
-EP=B1010 0010 1010 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
-
----------
-Time=429
-ISTR=B1000 0000 0001 0000
-FNR=B1010 0101 0011 1111
-EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
-SETUP 
-bmRequestType=B0010 0001
-bRequest=9
-wValue.H= 3
-wValue.L= 0
-wIndex= 0
-wLength= 8 CLASS SET REPORT  
-
----------
-Time=429
-ISTR=B1000 0000 0001 0000
-FNR=B1010 0101 0011 1111
-EP=B1010 0010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 0x32 0x0 0x0 0x0 0x2 0x0 0x3 0x0  FEATURE
-Prepare to transmit 0 
-
----------
-Time=429
-ISTR=B1000 0000 0000 0000
-FNR=B1010 0101 0011 1111
-EP=B0011 0010 1010 0000
-Transmit by EPnum=0 End Transmit  
-
----------
-Time=429
-ISTR=B1000 0000 0001 0000
-FNR=B1010 0101 0011 1111
-EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
-SETUP 
-bmRequestType=B1010 0001
-bRequest=1
-wValue.H= 3
-wValue.L= 0
-wIndex= 0
-wLength= 8 CLASS GET REPORT FEATURE
-Prepare to transmit 8
-Buffer->PMA[0] 8 bytes  
-
----------
-Time=429
+Time=409
 ISTR=B0010 0000 0000
-FNR=B0010 0101 0100 0000
+FNR=B0110 0110 0101 0011
 EP=B1010 0010 1010 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
 
 ---------
-Time=5930
+Time=425
 ISTR=B1000 0000 0001 0000
-FNR=B1010 0010 1011 1100
+FNR=B1010 0110 0110 0010
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0xA1 0x1 0x0 0x3 0x0 0x0 0x8 0x0 
 SETUP 
 bmRequestType=B1010 0001
 bRequest=1
 wValue.H= 3
 wValue.L= 0
 wIndex= 0
-wLength= 8 CLASS GET REPORT FEATURE
-Prepare to transmit 8
-Buffer->PMA[0] 8 bytes  
+wLength= 8
+CLASS HID GET REPORT FEATURE
+Start TX 8 b 
+Buffer->PMA[0] 8 b: 0x64 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+
 
 ---------
-Time=5930
+Time=425
 ISTR=B1000 0000 0000 0000
-FNR=B1010 0010 1011 1100
+FNR=B1010 0110 0110 0010
 EP=B1010 0010 1010 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit  
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
 
 ---------
-Time=5931
+Time=425
 ISTR=B1000 0000 0001 0000
-FNR=B1010 0010 1011 1101
+FNR=B1010 0110 0110 0010
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x21 0x9 0x0 0x3 0x0 0x0 0x8 0x0 
 SETUP 
 bmRequestType=B0010 0001
 bRequest=9
 wValue.H= 3
 wValue.L= 0
 wIndex= 0
-wLength= 8 CLASS SET REPORT  
+wLength= 8
+
 
 ---------
-Time=5931
+Time=425
 ISTR=B1000 0000 0001 0000
-FNR=B0110 0010 1011 1101
+FNR=B0110 0110 0110 0010
 EP=B1010 0010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 0x64 0x0 0x0 0x0 0x2 0x0 0x3 0x0  FEATURE
-Prepare to transmit 0 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x32 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+CLASS HID SET_REPORT FEATURE
+Start TX 0 b 
+
 
 ---------
-Time=5931
-ISTR=B1000 0000 0000 0000
-FNR=B1010 0010 1011 1101
+Time=425
+ISTR=B0010 0000 0000
+FNR=B1010 0110 0110 0011
 EP=B0011 0010 1010 0000
-Transmit by EPnum=0 End Transmit  
+TX complete EP[0]  End TX 
+
 
 ---------
-Time=5932
-ISTR=B1000 0000 0001 0000
-FNR=B1010 0010 1011 1101
+Time=425
+ISTR=B0010 0000 0000
+FNR=B1010 0110 0110 0011
 EP=B1110 1010 0110 0000
- received on EPnum=0
-PMA[0]->Buffer 8 bytes 
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0xA1 0x1 0x0 0x3 0x0 0x0 0x8 0x0 
 SETUP 
 bmRequestType=B1010 0001
 bRequest=1
 wValue.H= 3
 wValue.L= 0
 wIndex= 0
-wLength= 8 CLASS GET REPORT FEATURE
-Prepare to transmit 8
-Buffer->PMA[0] 8 bytes  
+wLength= 8
+CLASS HID GET REPORT FEATURE
+Start TX 8 b 
+Buffer->PMA[0] 8 b: 0x32 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+
 
 ---------
-Time=5932
-ISTR=B1000 0010 0000 0000
-FNR=B1010 0010 1011 1110
+Time=425
+ISTR=B0010 0000 0000
+FNR=B1010 0110 0110 0011
 EP=B1010 0010 1010 0000
- received on EPnum=0
-PMA[0]->Buffer 0 bytes 
-Transmit by EPnum=0 End Transmit 
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
+
+---------
+Time=5925
+ISTR=B1000 0000 0001 0000
+FNR=B1010 0011 1101 1110
+EP=B1110 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0xA1 0x1 0x0 0x3 0x0 0x0 0x8 0x0 
+SETUP 
+bmRequestType=B1010 0001
+bRequest=1
+wValue.H= 3
+wValue.L= 0
+wIndex= 0
+wLength= 8
+CLASS HID GET REPORT FEATURE
+Start TX 8 b 
+Buffer->PMA[0] 8 b: 0x32 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+
+
+---------
+Time=5925
+ISTR=B1000 0000 0000 0000
+FNR=B1010 0011 1101 1110
+EP=B1010 0010 1010 0000
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
+
+---------
+Time=5925
+ISTR=B1000 0000 0001 0000
+FNR=B1010 0011 1101 1110
+EP=B1110 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x21 0x9 0x0 0x3 0x0 0x0 0x8 0x0 
+SETUP 
+bmRequestType=B0010 0001
+bRequest=9
+wValue.H= 3
+wValue.L= 0
+wIndex= 0
+wLength= 8
+
+
+---------
+Time=5925
+ISTR=B1000 0000 0001 0000
+FNR=B1010 0011 1101 1110
+EP=B1010 0010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x64 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+CLASS HID SET_REPORT FEATURE
+Start TX 0 b 
+
+
+---------
+Time=5925
+ISTR=B0010 0000 0000
+FNR=B1010 0011 1101 1111
+EP=B0011 0010 1010 0000
+TX complete EP[0]  End TX 
+
+
+---------
+Time=5926
+ISTR=B1000 0000 0001 0000
+FNR=B0010 0011 1101 1111
+EP=B1110 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0xA1 0x1 0x0 0x3 0x0 0x0 0x8 0x0 
+SETUP 
+bmRequestType=B1010 0001
+bRequest=1
+wValue.H= 3
+wValue.L= 0
+wIndex= 0
+wLength= 8
+CLASS HID GET REPORT FEATURE
+Start TX 8 b 
+Buffer->PMA[0] 8 b: 0x64 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+
+
+---------
+Time=5926
+ISTR=B1000 0000 0000 0000
+FNR=B1010 0011 1101 1111
+EP=B1010 0010 1010 0000
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
+
+---------
+Time=83506
+ISTR=B1000 0000 0001 0000
+FNR=B0110 0010 1110 0101
+EP=B1110 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0xA1 0x1 0x0 0x3 0x0 0x0 0x8 0x0 
+SETUP 
+bmRequestType=B1010 0001
+bRequest=1
+wValue.H= 3
+wValue.L= 0
+wIndex= 0
+wLength= 8
+CLASS HID GET REPORT FEATURE
+Start TX 8 b 
+Buffer->PMA[0] 8 b: 0x64 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+
+
+---------
+Time=83506
+ISTR=B1000 0000 0000 0000
+FNR=B1010 0010 1110 0101
+EP=B1010 0010 1010 0000
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
+
+---------
+Time=83506
+ISTR=B1000 0000 0001 0000
+FNR=B1010 0010 1110 0101
+EP=B1110 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x21 0x9 0x0 0x3 0x0 0x0 0x8 0x0 
+SETUP 
+bmRequestType=B0010 0001
+bRequest=9
+wValue.H= 3
+wValue.L= 0
+wIndex= 0
+wLength= 8
+
+
+---------
+Time=83506
+ISTR=B0010 0000 0000
+FNR=B1010 0010 1110 0110
+EP=B1010 0010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x32 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+CLASS HID SET_REPORT FEATURE
+Start TX 0 b 
+
+
+---------
+Time=83506
+ISTR=B0010 0000 0000
+FNR=B1010 0010 1110 0110
+EP=B0011 0010 1010 0000
+TX complete EP[0]  End TX 
+
+
+---------
+Time=83506
+ISTR=B1000 0000 0001 0000
+FNR=B1110 0010 1110 0110
+EP=B1110 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0xA1 0x1 0x0 0x3 0x0 0x0 0x8 0x0 
+SETUP 
+bmRequestType=B1010 0001
+bRequest=1
+wValue.H= 3
+wValue.L= 0
+wIndex= 0
+wLength= 8
+CLASS HID GET REPORT FEATURE
+Start TX 8 b 
+Buffer->PMA[0] 8 b: 0x32 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+
+
+---------
+Time=83506
+ISTR=B1000 0000 0000 0000
+FNR=B1010 0010 1110 0110
+EP=B1010 0010 1010 0000
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
+
+---------
+Time=89007
+ISTR=B1000 0000 0001 0000
+FNR=B0110 0000 0110 0001
+EP=B1110 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0xA1 0x1 0x0 0x3 0x0 0x0 0x8 0x0 
+SETUP 
+bmRequestType=B1010 0001
+bRequest=1
+wValue.H= 3
+wValue.L= 0
+wIndex= 0
+wLength= 8
+CLASS HID GET REPORT FEATURE
+Start TX 8 b 
+Buffer->PMA[0] 8 b: 0x32 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+
+
+---------
+Time=89007
+ISTR=B1000 0000 0000 0000
+FNR=B1010 0000 0110 0001
+EP=B1010 0010 1010 0000
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
+
+---------
+Time=89007
+ISTR=B1000 0000 0001 0000
+FNR=B1010 0000 0110 0010
+EP=B1110 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x21 0x9 0x0 0x3 0x0 0x0 0x8 0x0 
+SETUP 
+bmRequestType=B0010 0001
+bRequest=9
+wValue.H= 3
+wValue.L= 0
+wIndex= 0
+wLength= 8
+
+
+---------
+Time=89007
+ISTR=B1000 0000 0001 0000
+FNR=B0110 0000 0110 0010
+EP=B1010 0010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x64 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+CLASS HID SET_REPORT FEATURE
+Start TX 0 b 
+
+
+---------
+Time=89007
+ISTR=B1000 0000 0000 0000
+FNR=B1010 0000 0110 0010
+EP=B0011 0010 1010 0000
+TX complete EP[0]  End TX 
+
+
+---------
+Time=89007
+ISTR=B1000 0000 0001 0000
+FNR=B0110 0000 0110 0010
+EP=B1110 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0xA1 0x1 0x0 0x3 0x0 0x0 0x8 0x0 
+SETUP 
+bmRequestType=B1010 0001
+bRequest=1
+wValue.H= 3
+wValue.L= 0
+wIndex= 0
+wLength= 8
+CLASS HID GET REPORT FEATURE
+Start TX 8 b 
+Buffer->PMA[0] 8 b: 0x64 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+
+
+---------
+Time=89007
+ISTR=B1000 0000 0000 0000
+FNR=B1010 0000 0110 0010
+EP=B1010 0010 1010 0000
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
+
+---------
+Time=110837
+ISTR=B1000 0000 0001 0000
+FNR=B1010 0101 1010 0110
+EP=B1110 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0xA1 0x1 0x0 0x3 0x0 0x0 0x8 0x0 
+SETUP 
+bmRequestType=B1010 0001
+bRequest=1
+wValue.H= 3
+wValue.L= 0
+wIndex= 0
+wLength= 8
+CLASS HID GET REPORT FEATURE
+Start TX 8 b 
+Buffer->PMA[0] 8 b: 0x64 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+
+
+---------
+Time=110837
+ISTR=B1000 0000 0000 0000
+FNR=B1010 0101 1010 0110
+EP=B1010 0010 1010 0000
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
+
+
+---------
+Time=110837
+ISTR=B0010 0000 0000
+FNR=B0110 0101 1010 0111
+EP=B1110 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x21 0x9 0x0 0x3 0x0 0x0 0x8 0x0 
+SETUP 
+bmRequestType=B0010 0001
+bRequest=9
+wValue.H= 3
+wValue.L= 0
+wIndex= 0
+wLength= 8
+
+
+---------
+Time=110837
+ISTR=B0010 0000 0000
+FNR=B1010 0101 1010 0111
+EP=B1010 0010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0x32 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+CLASS HID SET_REPORT FEATURE
+Start TX 0 b 
+
+
+---------
+Time=110837
+ISTR=B0010 0000 0000
+FNR=B1010 0101 1010 0111
+EP=B0011 0010 1010 0000
+TX complete EP[0]  End TX 
+
+
+---------
+Time=110837
+ISTR=B1000 0010 0001 0000
+FNR=B1010 0101 1010 0111
+EP=B1110 1010 0110 0000
+Received in EP[0]: 
+PMA[0]->Buffer 8 b: 0xA1 0x1 0x0 0x3 0x0 0x0 0x8 0x0 
+SETUP 
+bmRequestType=B1010 0001
+bRequest=1
+wValue.H= 3
+wValue.L= 0
+wIndex= 0
+wLength= 8
+CLASS HID GET REPORT FEATURE
+Start TX 8 b 
+Buffer->PMA[0] 8 b: 0x32 0x0 0x0 0x0 0x98 0x3A 0x60 0xF0 
+
+
+---------
+Time=110837
+ISTR=B0010 0000 0000
+FNR=B1010 0101 1010 0111
+EP=B1010 0010 1010 0000
+Received in EP[0]: 
+PMA[0]->Buffer 0 b: 
+TX complete EP[0]  End TX 
