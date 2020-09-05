@@ -5,6 +5,7 @@
 #include "additional_func.h"
 #include "oringbuf.h"
 #include "usb_callback.h"
+#include "usb_interface.h"
 
 //for SWO logging activate SWOLOG in Options\C++ compiler\Defined Symbol
 
@@ -27,6 +28,7 @@ void Sender();
 extern Typedef_USB_Callback USB_Callback;
 void USB_GetFeature(uint8_t reportN, uint16_t **ppReport, uint16_t *len);
 void USB_SetFeature(uint8_t reportN, uint8_t *pReport, uint16_t len);
+void USB_SampleSend(uint8_t epn);
 
 struct  //it described in section "feature reports" HID Report Descriptor
   {
@@ -36,16 +38,20 @@ struct  //it described in section "feature reports" HID Report Descriptor
   } HID_SenrorFeature={
     .interval = 32,
     .maximum = 15000,
-    .minimum = -4000
-    };
+    .minimum = -4000 };
 
 struct  //it described in section "input reports (transmit)" HID Report Descriptor
 {
   uint8_t state;
   uint8_t event;
   int16_t temperature;
-} HID_SensorInReport;
+} HID_SensorInReport={
+  .state = 1,
+  .event = 3,
+  .temperature = 0 };
 
+uint8_t  isNewSampleTemperature = 1; //flag "Have a new sample"
+  
 void main()
 {
   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN //GPIO C enable
@@ -76,7 +82,7 @@ void main()
   // JTAG-DP Disabled and SW-DP Enabled
   AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_1;
   
-  if (!Oringbuf_Create(8100))
+  if (!Oringbuf_Create(10240))
     exceptionFail();   //don't have memory maybe
 #endif
   
@@ -84,7 +90,7 @@ void main()
   while (SysTick_Config(SYSTICK_DIVIDER)==1)	
     asm("nop");	 //reason - bad divider 
   NVIC_EnableIRQ(SysTick_IRQn);
-  systickSheduler.interval = 100000;
+  systickSheduler.interval = 50;
   systickSheduler.body = Sender;
   
   //Turn ON the takt core couner
@@ -95,6 +101,7 @@ void main()
  //USB initialize
   USB_Callback.GetFeatureReport = USB_GetFeature;
   USB_Callback.SetFeatureReport = USB_SetFeature;
+  USB_Callback.EPtransmitDone = USB_SampleSend;
   GPIO_RESET(GPIOA,1<<USB_ENABLE); //Enable USB pullup resistor 1k5
   //RCC->CFGR |= RCC_CFGR_USBPRE; //not divide PLL clock for USB 48MHz
   RCC->APB1ENR |= RCC_APB1ENR_USBEN; //clocking USB Enable
@@ -121,11 +128,11 @@ This callback run as the Systick achive interval ticks
 **************************************************************************** */
 void Sender()
 {
-  return; /*
- static uint16_t value=0; 
-(GPIO_READ_OUTPUT(GPIOC,1<<ONBOARD_LED)==0) ?  GPIO_SET(GPIOC,1<<ONBOARD_LED):GPIO_RESET(GPIOC,1<<ONBOARD_LED);
- USB_sendReport(1,&value,2);
- value++;*/
+  HID_SensorInReport.temperature++; //emulated refresh temperaure sensor
+  isNewSampleTemperature = 1;
+  (GPIO_READ_OUTPUT(GPIOC,1<<ONBOARD_LED)==0) ?  GPIO_SET(GPIOC,1<<ONBOARD_LED):GPIO_RESET(GPIOC,1<<ONBOARD_LED);
+  if (USB_sendReport(1,(uint16_t*)&HID_SensorInReport,sizeof(HID_SensorInReport)))
+    isNewSampleTemperature = 0;
 }
 
 /* ****************************************************************************
@@ -151,4 +158,13 @@ void USB_SetFeature(uint8_t reportN, uint8_t *pReport, uint16_t len)
 {
   memcpy(&HID_SenrorFeature, pReport, len);
   asm("nop");
+}
+
+void USB_SampleSend(uint8_t epn)
+{
+  if (epn == 1)
+    if (isNewSampleTemperature)
+      if (USB_sendReport(epn,(uint16_t*)&HID_SensorInReport,sizeof(HID_SensorInReport)))
+        isNewSampleTemperature = 0;
+  
 }

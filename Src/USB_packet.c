@@ -1,9 +1,10 @@
 /* ******    TODO    *********
 */
+#include <stdlib.h>
 #include "USB_packet.h"
+#include "usb_interface.h"
 #include "USB_sharedFunctions.h"
 #include "USB_transact.h"
-#include <stdlib.h>
 #include "Systick.h"
 #include "additional_func.h"
 #include "oringbuf.h"
@@ -329,6 +330,7 @@ void USB_EPHandler(uint16_t Status)
           #endif
           if (EpData[EPn].SendState == EP_SEND_BUSY)
             EpData[EPn].SendState = EP_SEND_READY;
+          USB_EPtransmitDone(EPn);
           }
       }//something transmitted
 }//void USB_EPHandler
@@ -440,7 +442,7 @@ This routine try to send IN REPORT.
 EPn - endpoint number to use
 Data - pointer to outgong data
 Length - length data in bytes
-return value: 0 - if data deny to send. 1-Data allow to send and will be send
+return value: 0 - if data deny to send. 1-Data accept and will be send
 **************************************************************************** */
 uint8_t USB_sendReport(uint8_t EPn, uint16_t *Data, uint16_t Length)
 { 
