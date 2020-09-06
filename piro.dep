@@ -89,6 +89,7 @@
             <file>$PROJ_DIR$\Debug\Obj\additional_func.xcl</file>
             <file>$PROJ_DIR$\Debug\Exe\piro.out</file>
             <file>$PROJ_DIR$\Debug\Obj\piro.pbd</file>
+            <file>$PROJ_DIR$\Inc\config.h</file>
         </outputs>
         <file>
             <name>$PROJ_DIR$\Src\main.c</name>
@@ -109,7 +110,7 @@
             <inputs>
                 <tool>
                     <name>ICCARM</name>
-                    <file> 0 7 67 35 23 64 39 79 63 4 18 32 1 16 10 21 15 58 44 42 19 13 17 31 25</file>
+                    <file> 84 0 7 67 35 23 64 39 79 63 4 18 32 1 16 10 21 15 58 44 42 19 13 17 31 25</file>
                 </tool>
             </inputs>
         </file>
@@ -151,7 +152,7 @@
             <inputs>
                 <tool>
                     <name>ICCARM</name>
-                    <file> 74 7 67 35 23 64 39 79 63 4 18 32 1 16 0 22</file>
+                    <file> 74 7 67 35 23 64 39 79 63 4 18 32 1 16 0 22 84</file>
                 </tool>
             </inputs>
         </file>
@@ -220,7 +221,7 @@
             <inputs>
                 <tool>
                     <name>ICCARM</name>
-                    <file> 21 7 67 35 23 64 39 79 63 4 18 32 1 16</file>
+                    <file> 21 7 67 35 23 64 39 79 63 4 18 32 1 16 44 42 19</file>
                 </tool>
             </inputs>
         </file>

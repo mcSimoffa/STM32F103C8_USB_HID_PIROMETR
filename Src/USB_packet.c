@@ -1,5 +1,3 @@
-/* ******    TODO    *********
-*/
 #include <stdlib.h>
 #include "USB_packet.h"
 #include "usb_interface.h"
@@ -125,9 +123,17 @@ void USB_LP_CAN1_RX0_IRQHandler()
     if (USB->ISTR & USB_ISTR_SOF) 
     {
       USB->ISTR &= ~USB_ISTR_SOF;
+    #ifdef SWOLOG
+      uint8_t printLogFlag = 0;
+    #endif
       if ((USB->EPR[0] & EP_STAT_TX) == TX_STALL) //this part turn off the STALL if it was be turned on before
+      {
         USBLIB_setStatTx(0, TX_NAK);
-      
+      #ifdef SWOLOG
+        pFloat = stradd (pFloat, "\r\nSTALL -> NAK");
+        printLogFlag = 1;
+      #endif
+      }
       for (int i=1;i<EPCOUNT;i++)
       {
         if(EpData[i].SendState == EP_SEND_INITIATE)
@@ -138,12 +144,15 @@ void USB_LP_CAN1_RX0_IRQHandler()
             BDTable[i].TX_Count = 0;
           USBLIB_setStatTx(i, TX_VALID);
           EpData[i].SendState = EP_SEND_BUSY;
-          putlog();
+          printLogFlag = 1;
         } 
       }
+    #ifdef SWOLOG
+      if (printLogFlag)
+        putlog();
+    #endif
       return;
-    }
-    
+    }   
     USB->ISTR = 0; //other interrupt
 }
 
@@ -228,6 +237,9 @@ void USB_EPHandler(uint16_t Status)
           EP0_Collect.expectedSize = SetupPacket->wLength;     //how many bytes need to save expected Data packets
           if (EP0_Collect.expectedSize) //it needs memory for OUT DATA stage ?
           {
+          #ifdef SWOLOG
+            pFloat = stradd (pFloat,"\r\nAssembing transaction");
+          #endif
             if (EP0_Collect.allocSize < EP0_Collect.expectedSize) //has too little allocated mem ?
             {
               free(EP0_Collect.pData);
@@ -294,7 +306,7 @@ void USB_EPHandler(uint16_t Status)
       { // Got data from another EP
         asm("nop");  // Call user function
       #ifdef SWOLOG
-        pFloat = stradd (pFloat,"\r\nGot Data ");
+        pFloat = stradd (pFloat,"\r\nGot Data an another EP ");
       #endif         
       }// Got data from another EP
       USBLIB_setStatRx(EPn, RX_VALID);
@@ -345,20 +357,31 @@ Length  - size of Data Array
 ***************************************************************************** */
 void USBLIB_SendData(uint8_t EPn, uint16_t *Data, uint16_t Length)
 {
-  USB->EPR[EPn] &= 0x870f;   //reset flag CTR_TX          //vozmojno zdes nado obnulit flag TC
-#ifdef SWOLOG
-  pFloat = stradd (pFloat, "\r\nStart TX ");
-  pFloat = itoa(Length ,pFloat,10,0);
-  pFloat = stradd (pFloat, " b ");
-#endif
+  USB->EPR[EPn] &= 0x870f;   //reset flag CTR_TX
   EpData[EPn].lTX = Length;
   EpData[EPn].pTX_BUFF = Data;
-  if (Length > 0)
+     
+  if (EpData[EPn].SendState == EP_SEND_READY)
+  {
+    if (Length > 0)
       USBLIB_EPBuf2Pma(EPn);
     else
       BDTable[EPn].TX_Count = 0;
-                                                                                          
-  USBLIB_setStatTx(EPn, TX_VALID);
+  #ifdef SWOLOG
+    pFloat = stradd (pFloat, "\r\nStart TX ");
+    pFloat = itoa(Length ,pFloat,10,0);
+    pFloat = stradd (pFloat, " b ");
+  #endif
+    USBLIB_setStatTx(EPn, TX_VALID);
+    EpData[EPn].SendState = EP_SEND_BUSY;
+  } else
+    {
+    #ifdef SWOLOG
+      pFloat = stradd (pFloat, "\r\nWait for start TX on EP[");
+      pFloat = itoa(EPn ,pFloat,10,0);
+      pFloat = stradd (pFloat, "]");
+    #endif
+    }
 }
 
 /* ****************************************************************************

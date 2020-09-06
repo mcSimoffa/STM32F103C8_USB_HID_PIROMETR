@@ -1,4 +1,5 @@
 //SYSCLK=48MHz
+#include "config.h"
 #include "stm32f103xb_usbdef.h"
 #include "cll_stm32F10x_gpio.h"
 #include "Systick.h"
@@ -21,7 +22,7 @@
    uint8_t toSWO;
 #endif
 //Systick Callback
-extern Typedef_SystickCallback systickSheduler;
+void FlashOneSec();
 void Sender();
 
 //USB Callback
@@ -32,13 +33,15 @@ void USB_SampleSend(uint8_t epn);
 
 struct  //it described in section "feature reports" HID Report Descriptor
   {
-    uint32_t  interval;
-    int16_t  maximum;
-    int16_t  minimum;
+    uint16_t  minimum_report_interval;
+    uint16_t  report_interval;
+    int16_t  maximum_temp;
+    int16_t  minimum_temp;
   } HID_SenrorFeature={
-    .interval = 32,
-    .maximum = 15000,
-    .minimum = -4000 };
+    .minimum_report_interval = USB_EP_MIN_REPORT_INTERVAL,
+    .report_interval = USB_EP_MIN_REPORT_INTERVAL,
+    .maximum_temp = 15000,    //150 degreed Celsium
+    .minimum_temp = -4000 };  //-40 degreed Celsium
 
 struct  //it described in section "input reports (transmit)" HID Report Descriptor
 {
@@ -87,21 +90,27 @@ void main()
 #endif
   
   //1ms SysTick interval.
+  if (!SysTick_TimersCreate(2))
+    exceptionFail();   //don't have memory maybe
+  SysTick_TimerInit(0, Sender);
+  SysTick_TimerInit(1, FlashOneSec);  //it's no need
   while (SysTick_Config(SYSTICK_DIVIDER)==1)	
     asm("nop");	 //reason - bad divider 
   NVIC_EnableIRQ(SysTick_IRQn);
-  systickSheduler.interval = 50;
-  systickSheduler.body = Sender;
-  
+  SysTick_TimerRun(0, USB_EP_MIN_REPORT_INTERVAL);  //timer to send USB IN Report
+  SysTick_TimerRun(1, 1000);  //it's no need
+
   //Turn ON the takt core couner
   CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;// Enable DWT
   DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk; //counter ON
   DWT->CYCCNT = 0; //start value = 0
   
- //USB initialize
+  //USB callBack function assign
   USB_Callback.GetFeatureReport = USB_GetFeature;
   USB_Callback.SetFeatureReport = USB_SetFeature;
   USB_Callback.EPtransmitDone = USB_SampleSend;
+  
+  //USB initialize
   GPIO_RESET(GPIOA,1<<USB_ENABLE); //Enable USB pullup resistor 1k5
   //RCC->CFGR |= RCC_CFGR_USBPRE; //not divide PLL clock for USB 48MHz
   RCC->APB1ENR |= RCC_APB1ENR_USBEN; //clocking USB Enable
@@ -116,6 +125,7 @@ void main()
   //msDelay(4000);
   //GPIO_SET(GPIOA,1<<USB_ENABLE); //Disable USB pullup resistor 1k5
   
+  //main cycle
   while (1)
   {
   if(Oringbuf_Get(&toSWO,1))
@@ -123,6 +133,11 @@ void main()
   }
 }
 
+void FlashOneSec()
+{
+  asm("nop");
+}
+      
 /* ****************************************************************************
 This callback run as the Systick achive interval ticks
 **************************************************************************** */
@@ -152,12 +167,14 @@ void USB_GetFeature(uint8_t reportN, uint16_t **ppReport, uint16_t *len)
 This callback run as the SET_REPORT type get feature incoming 
 pReport - pointer to feature Data
 len - size of Data
-application only must Save Data located pReport in owns structure or variable
+application must Save Data located pReport in owns structure or variable
 **************************************************************************** */
 void USB_SetFeature(uint8_t reportN, uint8_t *pReport, uint16_t len)
 {
   memcpy(&HID_SenrorFeature, pReport, len);
-  asm("nop");
+  //change report interval
+  SysTick_TimerStop(0);
+  SysTick_TimerRun(0, (uint32_t)HID_SenrorFeature.report_interval);
 }
 
 void USB_SampleSend(uint8_t epn)
