@@ -51,7 +51,7 @@ typedef struct
 } USB_STR_DESCRIPTOR;
 
  uint8_t USB_GetDescriptor(USB_SetupPacket *SPacket, uint16_t **addr, uint16_t *len);
- #ifdef SWOLOG
+#ifdef SWOLOG
  char *Log_descriptorName(USB_SetupPacket *SPacket);
- #endif
+#endif
 #endif //_USB_DESCRIPTOR_H_

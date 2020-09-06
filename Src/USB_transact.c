@@ -19,7 +19,8 @@ Typedef_USB_Callback USB_Callback={
   .GetFeatureReport = NULL,
   .SetInputReport = NULL, 
   .SetOutputReport = NULL,
-  .SetFeatureReport = NULL
+  .SetFeatureReport = NULL,
+  .EPtransmitDone = NULL
 };
 
 /* ***************************************************************************
@@ -327,3 +328,10 @@ void USB_setDeviceCofig(uint16_t val)
 
 uint16_t  USB_getDeviceConfig()
 {return(DeviceConfigured);}
+
+void USB_EPtransmitDone(uint8_t EPn)
+{
+  if (EPn)
+    if (USB_Callback.EPtransmitDone)
+      USB_Callback.EPtransmitDone(EPn);
+}

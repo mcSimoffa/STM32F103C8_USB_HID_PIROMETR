@@ -3,12 +3,13 @@
 
 typedef struct 
 {
-  void (*GetInputReport)   (uint8_t reportNum, uint16_t **ppReport, uint16_t *len);
-  void (*GetOutputReport)  (uint8_t reportNum, uint16_t **ppReport, uint16_t *len);
-  void (*GetFeatureReport) (uint8_t reportNum, uint16_t **ppReport, uint16_t *len);
-  void (*SetInputReport)   (uint8_t reportNum, uint8_t *pReport, uint16_t len);
-  void (*SetOutputReport)  (uint8_t reportNum, uint8_t *pReport, uint16_t len);
-  void (*SetFeatureReport) (uint8_t reportNum, uint8_t *pReport, uint16_t len);  
+  void (*GetInputReport)    (uint8_t reportNum, uint16_t **ppReport, uint16_t *len);
+  void (*GetOutputReport)   (uint8_t reportNum, uint16_t **ppReport, uint16_t *len);
+  void (*GetFeatureReport)  (uint8_t reportNum, uint16_t **ppReport, uint16_t *len);
+  void (*SetInputReport)    (uint8_t reportNum, uint8_t *pReport, uint16_t len);
+  void (*SetOutputReport)   (uint8_t reportNum, uint8_t *pReport, uint16_t len);
+  void (*SetFeatureReport)  (uint8_t reportNum, uint8_t *pReport, uint16_t len);
+  void (*EPtransmitDone)    (uint8_t EPnum);
   
 }Typedef_USB_Callback;
 
