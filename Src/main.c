@@ -18,9 +18,6 @@
 //GPIO C
 #define ONBOARD_LED 13
 
-#ifdef SWOLOG
-   uint8_t toSWO;
-#endif
 //Systick Callback
 void FlashOneSec();
 void Sender();
@@ -59,8 +56,9 @@ void main()
 {
   RCC->APB2ENR |= RCC_APB2ENR_IOPCEN //GPIO C enable
     | RCC_APB2ENR_IOPAEN    //GPIO A
+    | RCC_APB2ENR_IOPBEN    //GPIO B  
     | RCC_APB2ENR_AFIOEN; // Alternate function enable
-  
+  //GPIO A init
   PinParametr GPIO_descript[3];
   GPIO_descript[0].PinPos=USB_DM;
   GPIO_descript[0].PinMode=GPIO_MODE_OUTPUT50_ALT_PUSH_PULL;
@@ -70,12 +68,21 @@ void main()
   
   GPIO_descript[2].PinPos=USB_ENABLE;
   GPIO_descript[2].PinMode=GPIO_MODE_OUTPUT50_OPEN_DRAIN;
-  CLL_GPIO_SetPinMode(GPIOA,GPIO_descript,3);   //GPIO A init
+  CLL_GPIO_SetPinMode(GPIOA,GPIO_descript,3);   
   GPIO_SET(GPIOA,1<<USB_ENABLE); //Disable USB pullup resistor 1k5
   
+  //GPIO B init
+  GPIO_descript[0].PinPos=SCL1;
+  GPIO_descript[0].PinMode=GPIO_MODE_OUTPUT50_ALT_OPEN_DRAIN;
+  
+  GPIO_descript[1].PinPos=SDA1;
+  GPIO_descript[1].PinMode=GPIO_MODE_OUTPUT50_ALT_OPEN_DRAIN;
+  CLL_GPIO_SetPinMode(GPIOB,GPIO_descript,2);   
+  
+  //GPIO C init
   GPIO_descript[0].PinPos=ONBOARD_LED;
   GPIO_descript[0].PinMode=GPIO_MODE_OUTPUT50_PUSH_PULL;  
-  CLL_GPIO_SetPinMode(GPIOC,GPIO_descript,1);   //GPIO C init
+  CLL_GPIO_SetPinMode(GPIOC,GPIO_descript,1);
   GPIO_SET(GPIOC,1<<ONBOARD_LED); //off LED 
   
 #ifdef SWOLOG
@@ -87,23 +94,28 @@ void main()
   
   if (!Oringbuf_Create(10240))
     exceptionFail();   //don't have memory maybe
+  uint8_t toSWO;
 #endif
   
-  //1ms SysTick interval.
+  
   if (!SysTick_TimersCreate(2))
     exceptionFail();   //don't have memory maybe
   SysTick_TimerInit(0, Sender);
   SysTick_TimerInit(1, FlashOneSec);  //it's no need
+  
+  //1ms SysTick interval.
   while (SysTick_Config(SYSTICK_DIVIDER)==1)	
     asm("nop");	 //reason - bad divider 
   NVIC_EnableIRQ(SysTick_IRQn);
   SysTick_TimerRun(0, USB_EP_MIN_REPORT_INTERVAL);  //timer to send USB IN Report
   SysTick_TimerRun(1, 1000);  //it's no need
-
+  
+#ifdef DEBUG
   //Turn ON the takt core couner
   CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;// Enable DWT
   DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk; //counter ON
   DWT->CYCCNT = 0; //start value = 0
+#endif
   
   //USB callBack function assign
   USB_Callback.GetFeatureReport = USB_GetFeature;
@@ -139,7 +151,8 @@ void FlashOneSec()
 }
       
 /* ****************************************************************************
-This callback run as the Systick achive interval ticks
+This callback run as the independed timer triggered
+it's needs for send IN USB report if temperature refreshed
 **************************************************************************** */
 void Sender()
 {
@@ -164,7 +177,8 @@ void USB_GetFeature(uint8_t reportN, uint16_t **ppReport, uint16_t *len)
 }
 
 /* ****************************************************************************
-This callback run as the SET_REPORT type get feature incoming 
+This callback run as the SET_REPORT type get feature incoming
+reportN - report number
 pReport - pointer to feature Data
 len - size of Data
 application must Save Data located pReport in owns structure or variable
@@ -177,6 +191,11 @@ void USB_SetFeature(uint8_t reportN, uint8_t *pReport, uint16_t len)
   SysTick_TimerRun(0, (uint32_t)HID_SenrorFeature.report_interval);
 }
 
+/* ****************************************************************************
+This callback run after succesfull transmit by Endpoint 
+epn - guilty endpoint number
+it's need if data sampling faster than Endpoint interrupt period
+**************************************************************************** */
 void USB_SampleSend(uint8_t epn)
 {
   if (epn == 1)

@@ -25,7 +25,10 @@ void SysTick_Handler()
     }
   }
 }
- 
+/* ****************************************************************************
+This routine delayed thread
+delay - time in tick to delayed
+**************************************************************************** */
 void msDelay(uint32_t delay)
 {
   SysTick->VAL = 0;
@@ -36,11 +39,21 @@ void msDelay(uint32_t delay)
    asm("nop"); 
 }
 
+/* ****************************************************************************
+This routine return the time since Systick started 
+**************************************************************************** */
 uint32_t GetTick()
 {
  return(ticks);
 }
 
+/* ****************************************************************************
+This routine creates several independed timers based on Systick interval
+total - quantity of independed timers
+Note: each independed timer  require 20 bytes in HEAP
+return value: 1 - if success or 0 - if Fail
+reasons Fail: no enough memmort, aleready have independed timers
+**************************************************************************** */
 uint8_t SysTick_TimersCreate(uint8_t total)
 {
   pStimers = 0;
@@ -62,6 +75,13 @@ uint8_t SysTick_TimersCreate(uint8_t total)
   return (0);
 }
 
+/* ****************************************************************************
+This routine assign Callback function for one independed timer 
+num             - number of independed timer
+stimer_callback - pointer to Callback function
+return value: 1 - if success or 0 - if Fail
+reasons Fail: haven't independed timers, num > total quantity timers, timer aleready Run
+**************************************************************************** */
 uint8_t SysTick_TimerInit(uint8_t num, void (*stimer_callback)(void))
 {
   if ((pStimers) && (num < timersTotal))
@@ -79,6 +99,13 @@ uint8_t SysTick_TimerInit(uint8_t num, void (*stimer_callback)(void))
   return (0); 
 }
 
+/* ****************************************************************************
+This routine Run independed timer with given interval
+num       - number of independed timer
+interval  - interval
+return value: 1 - if success or 0 - if Fail
+reasons Fail: haven't independed timers, num > total quantity timers,  timer aleready Run
+**************************************************************************** */
 uint8_t SysTick_TimerRun(uint8_t num, uint32_t interval)
 {
   if ((pStimers) && (num < timersTotal))
@@ -96,6 +123,12 @@ uint8_t SysTick_TimerRun(uint8_t num, uint32_t interval)
   return (0); 
 }
 
+/* ****************************************************************************
+This routine Stop independed timer
+num       - number of independed timer
+return value: 1 - if success or 0 - if Fail
+reasons Fail: haven't independed timers, num > total quantity timers
+**************************************************************************** */
 uint8_t SysTick_TimerStop(uint8_t num)
 {
   if ((pStimers) && (num < timersTotal))
