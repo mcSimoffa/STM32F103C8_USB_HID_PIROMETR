@@ -11,11 +11,17 @@
 //for SWO logging activate SWOLOG in Options\C++ compiler\Defined Symbol
 
 #define SYSTICK_DIVIDER 72000
+#define PCLK1 36  //APB1 clock (see APB1_DIVIDER in system_stm32f10x.c)
 //GPIO A
 #define USB_ENABLE 7
 #define USB_DM 11
 #define USB_DP 12
-//GPIO C
+
+// GPIO B
+#define SCL1  6
+#define SDA1  7
+
+// GPIO C
 #define ONBOARD_LED 13
 
 //Systick Callback
@@ -54,9 +60,9 @@ uint8_t  isNewSampleTemperature = 1; //flag "Have a new sample"
   
 void main()
 {
-  RCC->APB2ENR |= RCC_APB2ENR_IOPCEN //GPIO C enable
-    | RCC_APB2ENR_IOPAEN    //GPIO A
-    | RCC_APB2ENR_IOPBEN    //GPIO B  
+  RCC->APB2ENR |= RCC_APB2ENR_IOPCEN //GPIO C enable  (use as Led)
+    | RCC_APB2ENR_IOPAEN    //GPIO A  (use as USB)
+    | RCC_APB2ENR_IOPBEN    //GPIO B  (use as I2C) 
     | RCC_APB2ENR_AFIOEN; // Alternate function enable
   //GPIO A init
   PinParametr GPIO_descript[3];
@@ -84,6 +90,20 @@ void main()
   GPIO_descript[0].PinMode=GPIO_MODE_OUTPUT50_PUSH_PULL;  
   CLL_GPIO_SetPinMode(GPIOC,GPIO_descript,1);
   GPIO_SET(GPIOC,1<<ONBOARD_LED); //off LED 
+  
+  //I2C1 init
+  RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
+  I2C1->OAR2  &=  ~I2C_OAR2_ENDUAL;   //Dual adressing disable
+  I2C1->CR1   &=  ~I2C_CR1_NOSTRETCH  //Clock streth enable
+              &   ~I2C_CR1_ENGC       //Address 0 is NACKed 
+              &   ~I2C_CR1_PE;        //Disabled I2C1 peripherial 
+  I2C1->CR2 &=  ~I2C_CR2_FREQ;
+  I2C1->CR2 |=  PCLK1; 
+  I2C1->TRISE &=  ~I2C_TRISE_TRISE;
+  I2C1->TRISE |=  PCLK1 + 1;  //for 100kHz
+  //I2Cx->TRISE |=  PCLK1*300/1000 + 1; //for 400kHz
+  I2C1->CCR &=  ~I2C_CCR_FS;  //Sm mode
+  I2C1->CCR &=  ~I2C_CCR_DUTY;
   
 #ifdef SWOLOG
    //SWO debug ON
