@@ -12,6 +12,7 @@
 
 #define SYSTICK_DIVIDER 72000
 #define PCLK1 36  //APB1 clock (see APB1_DIVIDER in system_stm32f10x.c)
+#define MLX90614_ADDR 0x5A
 //GPIO A
 #define USB_ENABLE 7
 #define USB_DM 11
@@ -79,10 +80,10 @@ void main()
   
   //GPIO B init
   GPIO_descript[0].PinPos=SCL1;
-  GPIO_descript[0].PinMode=GPIO_MODE_OUTPUT50_ALT_OPEN_DRAIN;
+  GPIO_descript[0].PinMode=GPIO_MODE_OUTPUT2_ALT_OPEN_DRAIN;
   
   GPIO_descript[1].PinPos=SDA1;
-  GPIO_descript[1].PinMode=GPIO_MODE_OUTPUT50_ALT_OPEN_DRAIN;
+  GPIO_descript[1].PinMode=GPIO_MODE_OUTPUT2_ALT_OPEN_DRAIN;
   CLL_GPIO_SetPinMode(GPIOB,GPIO_descript,2);   
   
   //GPIO C init
@@ -94,16 +95,29 @@ void main()
   //I2C1 init
   RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
   I2C1->OAR2  &=  ~I2C_OAR2_ENDUAL;   //Dual adressing disable
-  I2C1->CR1   &=  ~I2C_CR1_NOSTRETCH  //Clock streth enable
-              &   ~I2C_CR1_ENGC       //Address 0 is NACKed 
-              &   ~I2C_CR1_PE;        //Disabled I2C1 peripherial 
-  I2C1->CR2 &=  ~I2C_CR2_FREQ;
-  I2C1->CR2 |=  PCLK1; 
+  I2C1->CR1 = I2C_CR1_SMBUS;  //SMBus, Device, disable PEC, stretch, Disabled I2C1 peripherial  
+  
+  I2C1->CR2 = PCLK1;  //Sm mode, 
+  
   I2C1->TRISE &=  ~I2C_TRISE_TRISE;
   I2C1->TRISE |=  PCLK1 + 1;  //for 100kHz
   //I2Cx->TRISE |=  PCLK1*300/1000 + 1; //for 400kHz
-  I2C1->CCR &=  ~I2C_CCR_FS;  //Sm mode
-  I2C1->CCR &=  ~I2C_CCR_DUTY;
+  I2C1->CCR = 180;  //36 000 000 / (100 000*2)
+  
+  I2C1->CR1  |= I2C_CR1_PE;
+  
+  I2C1->CR1 |= I2C_CR1_START;
+  while (!(I2C1->SR1 & I2C_SR1_SB));         // wait SB
+  {};
+  I2C1->DR = MLX90614_ADDR;
+  while (!(I2C1->SR1 & I2C_SR1_ADDR))        // wait ADDR
+    {
+        if(I2C1->SR1 & I2C_SR1_AF)           // if NACK
+            asm("nop");
+    }
+    (void) I2C1->SR2;                           // clear ADDR
+  I2C1->DR=0xF0;//read flag MLX
+  
   
 #ifdef SWOLOG
    //SWO debug ON
