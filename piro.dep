@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project>
     <fileVersion>4</fileVersion>
-    <fileChecksum>1517927217</fileChecksum>
+    <fileChecksum>869181226</fileChecksum>
     <configuration>
         <name>Debug</name>
         <outputs>
@@ -89,6 +89,7 @@
             <file>$PROJ_DIR$\Debug\Obj\additional_func.xcl</file>
             <file>$PROJ_DIR$\Debug\Exe\piro.out</file>
             <file>$PROJ_DIR$\Debug\Obj\piro.pbd</file>
+            <file>$PROJ_DIR$\Inc\i2c.h</file>
             <file>$PROJ_DIR$\Inc\config.h</file>
         </outputs>
         <file>
@@ -110,7 +111,7 @@
             <inputs>
                 <tool>
                     <name>ICCARM</name>
-                    <file> 84 0 7 67 35 23 64 39 79 63 4 18 32 1 16 10 21 15 58 44 42 19 13 17 31 25</file>
+                    <file> 85 0 7 67 35 23 64 39 79 63 4 18 32 1 16 10 21 15 58 44 42 19 13 17 31 25 84</file>
                 </tool>
             </inputs>
         </file>
@@ -152,7 +153,7 @@
             <inputs>
                 <tool>
                     <name>ICCARM</name>
-                    <file> 74 7 67 35 23 64 39 79 63 4 18 32 1 16 0 22 84</file>
+                    <file> 74 7 67 35 23 64 39 79 63 4 18 32 1 16 0 22 85</file>
                 </tool>
             </inputs>
         </file>
