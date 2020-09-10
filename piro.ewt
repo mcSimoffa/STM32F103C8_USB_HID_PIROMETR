@@ -2383,6 +2383,9 @@
             <name>$PROJ_DIR$\Src\cll_stm32F10x_gpio.c</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\Src\i2c.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\Src\main.c</name>
         </file>
         <file>

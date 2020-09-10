@@ -1,13 +1,12 @@
 //SYSCLK=48MHz
 #include "config.h"
-#include "stm32f103xb_usbdef.h"
 #include "cll_stm32F10x_gpio.h"
 #include "Systick.h"
 #include "additional_func.h"
 #include "oringbuf.h"
+#include "stm32f103xb_usbdef.h"
 #include "usb_callback.h"
 #include "usb_interface.h"
-#include "i2c.h"
 
 //for SWO logging activate SWOLOG in Options\C++ compiler\Defined Symbol
 
@@ -97,55 +96,18 @@ void main()
   
   //I2C1 init
   I2C1->OAR2  &=  ~I2C_OAR2_ENDUAL;   //Dual adressing disable
-  I2C1->CR1 = I2C_CR1_SMBUS;  //SMBus, Device, disable PEC, stretch, Disabled I2C1 peripherial  
-  
-  I2C1->CR2 = PCLK1;  //Sm mode, 
+  I2C1->CR1 = I2C_CR1_SMBUS;  //SMBus, Device, disable PEC, stretch, Disabled I2C1 peripherial    
+  I2C1->CR2 = PCLK1
+            | I2C_CR2_ITBUFEN
+            | I2C_CR2_ITEVTEN
+            | I2C_CR2_ITERREN;  //Sm mode, Interrupt EVENT & ERROR enabled
   
   I2C1->TRISE &=  ~I2C_TRISE_TRISE;
   I2C1->TRISE |=  PCLK1 + 1;  //for 100kHz
-  //I2Cx->TRISE |=  PCLK1*300/1000 + 1; //for 400kHz
   I2C1->CCR = 180;  //36 000 000 / (100 000*2)
-  
+  NVIC_EnableIRQ(I2C1_EV_IRQn);
+  NVIC_EnableIRQ(I2C1_ER_IRQn);
   I2C1->CR1  |= I2C_CR1_PE;
-  while (I2C1->SR2 & I2C_SR2_BUSY)        // wait ~BUSY
-    asm("nop");
-  
-  I2C1->CR1 |= I2C_CR1_START;
-  while (!(I2C1->SR1 & I2C_SR1_SB));         // wait SB
-    asm("nop");
-    
-  I2C1->DR = (MLX90614_ADDR<<1) | WRITE;
-  while (!(I2C1->SR1 & I2C_SR1_ADDR))        // wait ADDR
-    if(I2C1->SR1 & I2C_SR1_AF)           // if NACK
-      while(1) {};  
-  (void) I2C1->SR2;                           // clear ADDR
-  
-  I2C1->DR=0x07;  //read temperature
-  while (!(I2C1->SR1 & I2C_SR1_TXE))        // wait BTF
-    if(I2C1->SR1 & I2C_SR1_AF)                // if NACK
-      while(1) {};
-  
-  I2C1->CR1 |= I2C_CR1_START;           //restart
-  while (!(I2C1->SR1 & I2C_SR1_SB));    // wait SB
-    asm("nop");
-  
-  I2C1->DR = (MLX90614_ADDR<<1) | READ;
-  while (!(I2C1->SR1 & I2C_SR1_ADDR))        // wait ADDR
-    if(I2C1->SR1 & I2C_SR1_AF)           // if NACK
-      while(1) {};
-  (void) I2C1->SR2;                           // clear ADDR
-  
-  while (!(I2C1->SR1 & I2C_SR1_RXNE))        // wait incoming data
-    if(I2C1->SR1 & I2C_SR1_AF)                // if NACK
-      while(1) {};
- 
- uint16_t indata = (uint8_t)I2C1->DR;
- while (!(I2C1->SR1 & I2C_SR1_RXNE))        // wait incoming data
-    if(I2C1->SR1 & I2C_SR1_AF)                // if NACK
-      while(1) {};
- indata |= ((uint8_t)I2C1->DR)<<8;
- I2C1->CR1 |= I2C_CR1_STOP;
- //nujno li CR1_ASK ??
  
 #ifdef SWOLOG
    //SWO debug ON
