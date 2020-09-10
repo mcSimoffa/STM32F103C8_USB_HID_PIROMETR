@@ -7,6 +7,7 @@
 #include "stm32f103xb_usbdef.h"
 #include "usb_callback.h"
 #include "usb_interface.h"
+#include "i2c.h"
 
 //for SWO logging activate SWOLOG in Options\C++ compiler\Defined Symbol
 
@@ -24,6 +25,9 @@
 
 // GPIO C
 #define ONBOARD_LED 13
+
+//I2C callback
+void GotMLXtemperature();
 
 //Systick Callback
 void FlashOneSec();
@@ -107,8 +111,9 @@ void main()
   I2C1->CCR = 180;  //36 000 000 / (100 000*2)
   NVIC_EnableIRQ(I2C1_EV_IRQn);
   NVIC_EnableIRQ(I2C1_ER_IRQn);
-  I2C1->CR1  |= I2C_CR1_PE;
+  I2C1->CR1  |= I2C_CR1_PE; //Enable I2C
  
+  uint8_t res = I2C_ReadWord(MLX90614_ADDR, 0x07, GotMLXtemperature);
 #ifdef SWOLOG
    //SWO debug ON
   DBGMCU->CR &= ~(DBGMCU_CR_TRACE_MODE_0 | DBGMCU_CR_TRACE_MODE_0);
@@ -173,7 +178,12 @@ void FlashOneSec()
 {
   asm("nop");
 }
-      
+ 
+void GotMLXtemperature()
+{
+  
+  
+}
 /* ****************************************************************************
 This callback run as the independed timer triggered
 it's needs for send IN USB report if temperature refreshed

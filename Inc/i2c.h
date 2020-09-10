@@ -17,4 +17,6 @@ typedef enum
     
 #define WRITE 0
 #define READ  1
+
+uint8_t I2C_ReadWord(uint8_t address, uint8_t command, void (*DoneCallback)(void));
 #endif  //_I2C_H_
