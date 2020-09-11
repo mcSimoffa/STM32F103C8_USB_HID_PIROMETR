@@ -1,18 +1,18 @@
 #include <stdlib.h>
+#include <string.h>
 #include "USB_packet.h"
 #include "usb_interface.h"
 #include "USB_sharedFunctions.h"
 #include "USB_transact.h"
 #include "Systick.h"
 #include "additional_func.h"
-#include "oringbuf.h"
+#include "SWOfunction.h"
 
 #define EPCOUNT   2
 __no_init volatile USB_BDT BDTable[EPCOUNT] @ USB_PMAADDR ; //Buffer Description Table
 
-#ifdef SWOLOG
+#ifdef SWO_USB_LOG
   char *loggingSetupPacket(USB_SetupPacket *pSetup, char *pdst);
-  void putlog();
   char debugBuf[768];
   char *pFloat;
 #endif
@@ -41,7 +41,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
 {
     DWT->CYCCNT = 0;
     uint16_t istr=(uint16_t)USB->ISTR;
-  #ifdef SWOLOG
+  #ifdef SWO_USB_LOG
     pFloat = stradd (debugBuf, "\r\n");  //new debugging string
   #endif
       
@@ -53,7 +53,7 @@ void USB_LP_CAN1_RX0_IRQHandler()
         USB->DADDR = 0;
         USB->CNTR &= ~ USB_CNTR_SUSPM;
         USB->CNTR |= USB_CNTR_WKUPM;
-      #ifdef SWOLOG 
+      #ifdef SWO_USB_LOG 
         pFloat = stradd (pFloat, "\n---------\r\nTime=");
         pFloat = itoa(GetTick(), pFloat,10,0);
         pFloat = stradd (pFloat, "\r\nISTR=");
@@ -64,14 +64,14 @@ void USB_LP_CAN1_RX0_IRQHandler()
         pFloat = itoa(USB->EPR[0] ,pFloat,2,0);
       #endif  
       }
-    #ifdef SWOLOG
+    #ifdef SWO_USB_LOG
       pFloat = stradd (pFloat, " S");
-      putlog();
+      putlog(debugBuf, pFloat);
     #endif
       return;
     }
     
-  #ifdef SWOLOG
+  #ifdef SWO_USB_LOG
     pFloat = stradd (pFloat, "\r\n\n---------\r\nTime=");
     pFloat = itoa(GetTick(), pFloat,10,0);
     pFloat = stradd (pFloat, "\r\nISTR=");
@@ -83,9 +83,9 @@ void USB_LP_CAN1_RX0_IRQHandler()
     if (USB->ISTR & USB_ISTR_RESET) 
     { // Reset
       USB->ISTR &= ~USB_ISTR_RESET;
-    #ifdef SWOLOG
+    #ifdef SWO_USB_LOG
       pFloat = stradd (pFloat, "\r\nRESET");
-      putlog();
+      putlog(debugBuf, pFloat);
     #endif      
       USB_Reset();
       return;
@@ -94,16 +94,16 @@ void USB_LP_CAN1_RX0_IRQHandler()
     { //Handle data on EP
       USB->ISTR &= ~USB_ISTR_CTR;
       USB_EPHandler((uint16_t)USB->ISTR);
-      putlog();
+      putlog(debugBuf, pFloat);
       return;
     }
     
     if (USB->ISTR & USB_ISTR_ERR) 
     {
       USB->ISTR &= ~USB_ISTR_ERR;
-  #ifdef SWOLOG
+  #ifdef SWO_USB_LOG
       pFloat = stradd (pFloat, "\r\nERR");
-      putlog();
+      putlog(debugBuf, pFloat);
   #endif
       return;
     }
@@ -113,9 +113,9 @@ void USB_LP_CAN1_RX0_IRQHandler()
       USB->ISTR &= ~USB_ISTR_WKUP;
       USB->CNTR &= ~ USB_CNTR_WKUPM;
       USB->CNTR |= USB_CNTR_SUSPM;
-    #ifdef SWOLOG
+    #ifdef SWO_USB_LOG
       pFloat = stradd (pFloat, "\r\nWKUP");
-      putlog();       
+      putlog(debugBuf, pFloat);       
     #endif
       return;
     }
@@ -123,13 +123,13 @@ void USB_LP_CAN1_RX0_IRQHandler()
     if (USB->ISTR & USB_ISTR_SOF) 
     {
       USB->ISTR &= ~USB_ISTR_SOF;
-    #ifdef SWOLOG
+    #ifdef SWO_USB_LOG
       uint8_t printLogFlag = 0;
     #endif
       if ((USB->EPR[0] & EP_STAT_TX) == TX_STALL) //this part turn off the STALL if it was be turned on before
       {
         USBLIB_setStatTx(0, TX_NAK);
-      #ifdef SWOLOG
+      #ifdef SWO_USB_LOG
         pFloat = stradd (pFloat, "\r\nSTALL -> NAK");
         printLogFlag = 1;
       #endif
@@ -147,9 +147,9 @@ void USB_LP_CAN1_RX0_IRQHandler()
           printLogFlag = 1;
         } 
       }
-    #ifdef SWOLOG
+    #ifdef SWO_USB_LOG
       if (printLogFlag)
-        putlog();
+        putlog(debugBuf, pFloat);
     #endif
       return;
     }   
@@ -205,14 +205,14 @@ void USB_EPHandler(uint16_t Status)
     uint8_t  EPn = Status & ISTR_EP_ID; //endpoint number where occured
     uint32_t EP  = USB->EPR[EPn];
     uint8_t needAnswer = 0; //flag need ZLP or initiate send data
-  #ifdef SWOLOG
+  #ifdef SWO_USB_LOG
     pFloat = stradd (pFloat,"\r\nEP=");
     pFloat = itoa(EP ,pFloat,2,0);
   #endif
     if (EP & EP_CTR_RX)     //something received ?
     {
       USB->EPR[EPn] &= 0x78f; //reset flag CTR_RX
-    #ifdef SWOLOG
+    #ifdef SWO_USB_LOG
       pFloat = stradd (pFloat,"\r\nReceived in EP[");
       pFloat = itoa(EPn ,pFloat,10,0);
       pFloat = stradd (pFloat,"]: ");
@@ -226,7 +226,7 @@ void USB_EPHandler(uint16_t Status)
         {
         SetupPacket = (USB_SetupPacket *) memcpy (&SetupPacketStorage, EpData[EPn].pRX_BUFF, sizeof(USB_SetupPacket)); //reserve copy SETUP packet
         EP0_Collect.state = OUT_COLLECTOR_NOTHING;
-      #ifdef SWOLOG
+      #ifdef SWO_USB_LOG
         pFloat = stradd (pFloat,"\r\nSETUP ");
         pFloat=loggingSetupPacket(SetupPacket,pFloat);
       #endif
@@ -237,7 +237,7 @@ void USB_EPHandler(uint16_t Status)
           EP0_Collect.expectedSize = SetupPacket->wLength;     //how many bytes need to save expected Data packets
           if (EP0_Collect.expectedSize) //it needs memory for OUT DATA stage ?
           {
-          #ifdef SWOLOG
+          #ifdef SWO_USB_LOG
             pFloat = stradd (pFloat,"\r\nAssembing transaction");
           #endif
             if (EP0_Collect.allocSize < EP0_Collect.expectedSize) //has too little allocated mem ?
@@ -305,7 +305,7 @@ void USB_EPHandler(uint16_t Status)
     else 
       { // Got data from another EP
         asm("nop");  // Call user function
-      #ifdef SWOLOG
+      #ifdef SWO_USB_LOG
         pFloat = stradd (pFloat,"\r\nGot Data an another EP ");
       #endif         
       }// Got data from another EP
@@ -320,7 +320,7 @@ void USB_EPHandler(uint16_t Status)
     if (EP & EP_CTR_TX) //something transmitted
       {
         USB->EPR[EPn] &= 0x870f;   //reset flag CTR_TX
-      #ifdef SWOLOG
+      #ifdef SWO_USB_LOG
         pFloat = stradd (pFloat, "\r\nTX complete EP[");
         pFloat = itoa(EPn ,pFloat,10,0);
         pFloat = stradd (pFloat, "] ");
@@ -337,7 +337,7 @@ void USB_EPHandler(uint16_t Status)
           } 
         else 
           {
-          #ifdef SWOLOG
+          #ifdef SWO_USB_LOG
             pFloat = stradd (pFloat," End TX ");
           #endif
           if (EpData[EPn].SendState == EP_SEND_BUSY)
@@ -367,7 +367,7 @@ void USBLIB_SendData(uint8_t EPn, uint16_t *Data, uint16_t Length)
       USBLIB_EPBuf2Pma(EPn);
     else
       BDTable[EPn].TX_Count = 0;
-  #ifdef SWOLOG
+  #ifdef SWO_USB_LOG
     pFloat = stradd (pFloat, "\r\nStart TX ");
     pFloat = itoa(Length ,pFloat,10,0);
     pFloat = stradd (pFloat, " b ");
@@ -376,7 +376,7 @@ void USBLIB_SendData(uint8_t EPn, uint16_t *Data, uint16_t Length)
     EpData[EPn].SendState = EP_SEND_BUSY;
   } else
     {
-    #ifdef SWOLOG
+    #ifdef SWO_USB_LOG
       pFloat = stradd (pFloat, "\r\nWait for start TX on EP[");
       pFloat = itoa(EPn ,pFloat,10,0);
       pFloat = stradd (pFloat, "]");
@@ -401,7 +401,7 @@ void USBLIB_Pma2EPBuf(uint8_t EPn)
     Distination++;
     Address++;
   }
-  #ifdef SWOLOG    
+  #ifdef SWO_USB_LOG    
   pFloat = stradd (pFloat, "\r\nPMA[");
   pFloat = itoa(EPn ,pFloat,10,0);
   pFloat = stradd (pFloat, "]->Buffer ");
@@ -423,7 +423,7 @@ void USBLIB_EPBuf2Pma(uint8_t EPn)
   Count  = EpData[EPn].lTX <= EpData[EPn].TX_Max ? EpData[EPn].lTX : EpData[EPn].TX_Max;
   BDTable[EPn].TX_Count = Count;
   Distination = (uint32_t *)(USB_PMAADDR + BDTable[EPn].TX_Address * 2);
-  #ifdef SWOLOG
+  #ifdef SWO_USB_LOG
   pFloat = stradd (pFloat, "\r\nBuffer->PMA[");
   pFloat = itoa(EPn ,pFloat,10,0);
   pFloat = stradd (pFloat, "] ");
@@ -498,7 +498,7 @@ uint16_t  USB_geStatusEP(uint8_t EPnum)
 }
 
 
-#ifdef SWOLOG
+#ifdef SWO_USB_LOG
 /* ****************************************************************************
 SWO logging for SETUP packet type to SWO by ITM_SendChar
 pSetup - pointer on struct
@@ -518,13 +518,5 @@ char *loggingSetupPacket(USB_SetupPacket *pSetup, char *pdst)
   pdst = stradd (pdst, "\r\nwLength= ");
   pdst = itoa(pSetup->wLength ,pdst,10,0);
   return(pdst);
-}
-void putlog()
-{
-  uint16_t len=pFloat-debugBuf;
-  if (len)
-    if (Oringbuf_Put(debugBuf, len)<len)
-      exceptionFail();   //debug buffer is owerflowed
-  return;
 }
 #endif

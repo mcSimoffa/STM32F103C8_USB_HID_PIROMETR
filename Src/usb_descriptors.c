@@ -279,7 +279,7 @@ uint8_t USB_GetDescriptor(USB_SetupPacket *SPacket, uint16_t **addr, uint16_t *l
   return (retval);
 }
 
-#ifdef SWOLOG
+#ifdef SWO_USB_LOG
 /* ****************************************************************************
 This routine used for Logging Events
 it return pointer on text string corresponding to Descriptor Name

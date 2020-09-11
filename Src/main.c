@@ -9,11 +9,13 @@
 #include "usb_interface.h"
 #include "i2c.h"
 
-//for SWO logging activate SWOLOG in Options\C++ compiler\Defined Symbol
+//for SWO logging activate SWO_USB_LOG in Options\C++ compiler\Defined Symbol
 
 #define SYSTICK_DIVIDER 72000
 #define PCLK1 36  //APB1 clock (see APB1_DIVIDER in system_stm32f10x.c)
 #define MLX90614_ADDR 0x5A
+#define DELTA_KELVIN_CELSIUM  27315 // 0K = 273.15C
+
 //GPIO A
 #define USB_ENABLE 7
 #define USB_DM 11
@@ -27,7 +29,7 @@
 #define ONBOARD_LED 13
 
 //I2C callback
-void GotMLXtemperature();
+void GotMLXtemperature(uint16_t *pData);
 
 //Systick Callback
 void FlashOneSec();
@@ -62,6 +64,7 @@ struct  //it described in section "input reports (transmit)" HID Report Descript
   .temperature = 0 };
 
 uint8_t  isNewSampleTemperature = 1; //flag "Have a new sample"
+uint16_t MLXpreviousData;
   
 void main()
 {
@@ -114,7 +117,8 @@ void main()
   I2C1->CR1  |= I2C_CR1_PE; //Enable I2C
  
   uint8_t res = I2C_ReadWord(MLX90614_ADDR, 0x07, GotMLXtemperature);
-#ifdef SWOLOG
+  
+#if defined (SWO_USB_LOG) || (SWO_SMBUS_LOG)
    //SWO debug ON
   DBGMCU->CR &= ~(DBGMCU_CR_TRACE_MODE_0 | DBGMCU_CR_TRACE_MODE_0);
   DBGMCU->CR |= DBGMCU_CR_TRACE_IOEN;
@@ -169,8 +173,10 @@ void main()
   //main cycle
   while (1)
   {
+#if defined (SWO_USB_LOG) || (SWO_SMBUS_LOG)
   if(Oringbuf_Get(&toSWO,1))
     ITM_SendChar((uint32_t) toSWO);
+#endif  
   }
 }
 
@@ -178,14 +184,25 @@ void FlashOneSec()
 {
   asm("nop");
 }
- 
-void GotMLXtemperature()
+
+/* ****************************************************************************
+This callback called as the pirometr semsor MLX90614 take the temperature value
+pData - pointer to word of temperature value
+**************************************************************************** */
+void GotMLXtemperature(uint16_t *pData)
 {
-  
-  
+  if (MLXpreviousData != *pData)
+  {
+    (GPIO_READ_OUTPUT(GPIOC,1<<ONBOARD_LED)==0) ?  GPIO_SET(GPIOC,1<<ONBOARD_LED):GPIO_RESET(GPIOC,1<<ONBOARD_LED);
+    isNewSampleTemperature = 1;
+    MLXpreviousData = *pData;
+    HID_SensorInReport.temperature = (MLXpreviousData << 1) - DELTA_KELVIN_CELSIUM;
+    if (USB_sendReport(1,(uint16_t*)&HID_SensorInReport,sizeof(HID_SensorInReport)))
+    isNewSampleTemperature = 0;
+  }
 }
 /* ****************************************************************************
-This callback run as the independed timer triggered
+This callback called as the independed timer triggered
 it's needs for send IN USB report if temperature refreshed
 **************************************************************************** */
 void Sender()
@@ -198,7 +215,7 @@ void Sender()
 }
 
 /* ****************************************************************************
-This callback run as the GET_REPORT type get feature incoming 
+This callback called as the GET_REPORT type get feature incoming 
 ppReport - pointer to pointer on variable contained data to send
 len - pointer to variable contained asked length
 application only must to set this two pointers
@@ -211,7 +228,7 @@ void USB_GetFeature(uint8_t reportN, uint16_t **ppReport, uint16_t *len)
 }
 
 /* ****************************************************************************
-This callback run as the SET_REPORT type get feature incoming
+This callback called as the SET_REPORT type get feature incoming
 reportN - report number
 pReport - pointer to feature Data
 len - size of Data
@@ -226,7 +243,7 @@ void USB_SetFeature(uint8_t reportN, uint8_t *pReport, uint16_t len)
 }
 
 /* ****************************************************************************
-This callback run after succesfull transmit by Endpoint 
+This callback called after succesfull transmit by Endpoint 
 epn - guilty endpoint number
 it's need if data sampling faster than Endpoint interrupt period
 **************************************************************************** */

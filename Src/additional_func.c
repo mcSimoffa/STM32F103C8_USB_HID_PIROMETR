@@ -4,28 +4,6 @@ __inline void exceptionFail()
   while(1)
    asm("nop");
 }
-/* *************************************************************
- Send to ITM port knowed lenth string
-*pStr - pointer of sended string
-len - length of string
-************************************************************* */
-void ITM_SendString(uint8_t *pStr, int32_t len)
-{
-  int i=0;
-  for(i=0 ; i<len ; i++)
-    ITM_SendChar((*pStr++));
-}
-
-/* *************************************************************
- Send to ITM port null terminated string
-*toSWO - pointer of sended string
-************************************************************* */
-void debugPrint (char *toSWO)
-{
- while ( *toSWO!=0)
-  ITM_SendChar((uint32_t)*(toSWO++));
- return; 
-}
 
 /* **************************************************************     
 convert uint32_t to string routine.

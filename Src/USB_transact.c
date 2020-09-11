@@ -6,7 +6,7 @@
 #include "usb_callback.h"
 #include <stdlib.h>
 
-#ifdef SWOLOG
+#ifdef SWO_USB_LOG
   extern char *pFloat;
 #endif
 uint16_t DeviceStatus = STATUS_BUS_POWERED;
@@ -37,13 +37,13 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
   uint8_t retval = 1;
  if ((pSetup->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_STANDARD)	//Request type Standard ? 
   {
-#ifdef SWOLOG
+#ifdef SWO_USB_LOG
   pFloat = stradd (pFloat,"\r\nSTANDARD ");
 #endif
   switch (pSetup->bRequest) 
   {  
     case USB_REQUEST_GET_CONFIGURATION:
-  #ifdef SWOLOG
+  #ifdef SWO_USB_LOG
     pFloat = stradd (pFloat,"GET_CONF");
   #endif
     *ppDataToIn = (uint16_t *)&DeviceConfigured;
@@ -51,7 +51,7 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
     break;  //USB_REQUEST_GET_CONFIGURATION
     
   case USB_REQUEST_GET_DESCRIPTOR:
-  #ifdef SWOLOG
+  #ifdef SWO_USB_LOG
     pFloat = stradd (pFloat,"GET_DESCRIPTOR ");
     pFloat = stradd (pFloat,Log_descriptorName(pSetup));
   #endif
@@ -66,7 +66,7 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
     break;  //USB_REQUEST_GET_DESCRIPTOR
 
   case USB_REQUEST_GET_INTERFACE:
-  #ifdef SWOLOG
+  #ifdef SWO_USB_LOG
     pFloat = stradd (pFloat,"GET_INTFACE");
   #endif
     uint8_t InterfaceNumber;
@@ -76,7 +76,7 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
     break;  //USB_REQUEST_GET_INTERFACE
     
   case USB_REQUEST_GET_STATUS:
-  #ifdef SWOLOG
+  #ifdef SWO_USB_LOG
     pFloat = stradd (pFloat,"GET_STATUS");
   #endif
     uint16_t StatusVal;
@@ -84,7 +84,7 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
     switch(pSetup->bmRequestType & USB_REQUEST_RECIPIENT)
     {
       case USB_REQUEST_DEVICE:
-      #ifdef SWOLOG
+      #ifdef SWO_USB_LOG
         pFloat = stradd (pFloat," DEVICE");
       #endif
         *ppDataToIn = &DeviceStatus;
@@ -92,7 +92,7 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
         break;
         
       case USB_REQUEST_INTERFACE:
-      #ifdef SWOLOG
+      #ifdef SWO_USB_LOG
         pFloat = stradd (pFloat," IFACE");
       #endif
         *ppDataToIn = &StatusVal;
@@ -100,7 +100,7 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
         break;
         
       case USB_REQUEST_ENDPOINT:
-      #ifdef SWOLOG
+      #ifdef SWO_USB_LOG
         pFloat = stradd (pFloat," ENDP");
       #endif
         StatusVal = USB_geStatusEP(pSetup->wIndex.L);
@@ -117,13 +117,13 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
  
   else if ((pSetup->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_CLASS)
     {
-    #ifdef SWOLOG
+    #ifdef SWO_USB_LOG
       pFloat = stradd (pFloat,"\r\nCLASS HID ");
     #endif
      switch (pSetup->bRequest) 
       {
         case USB_HID_GET_REPORT:
-        #ifdef SWOLOG
+        #ifdef SWO_USB_LOG
           pFloat = stradd (pFloat,"GET REPORT");
         #endif
           uint16_t *pReportAddr;
@@ -132,7 +132,7 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
           switch(pSetup->wValue.H)
           {
             case USB_HID_REPORT_IN:
-            #ifdef SWOLOG
+            #ifdef SWO_USB_LOG
               pFloat = stradd (pFloat," IN");
             #endif
               if (USB_Callback.GetInputReport)
@@ -146,7 +146,7 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
               break;  //USB_HID_REPORT_IN
               
             case USB_HID_REPORT_OUT:
-            #ifdef SWOLOG
+            #ifdef SWO_USB_LOG
               pFloat = stradd (pFloat," OUT");
             #endif
               if (USB_Callback.GetOutputReport)
@@ -160,7 +160,7 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
               break;  //USB_HID_REPORT_OUT
               
             case USB_HID_REPORT_FEATURE:
-            #ifdef SWOLOG
+            #ifdef SWO_USB_LOG
               pFloat = stradd (pFloat," FEATURE");
             #endif
               if (USB_Callback.GetFeatureReport)
@@ -174,7 +174,7 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
               break;
 
             default: 
-            #ifdef SWOLOG
+            #ifdef SWO_USB_LOG
               pFloat = stradd (pFloat," ??");
             #endif 
               asm("nop");
@@ -182,7 +182,7 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
           break;  //USB_HID_GET_REPORT
                                                         
         case USB_HID_GET_IDLE:
-        #ifdef SWOLOG
+        #ifdef SWO_USB_LOG
           pFloat = stradd (pFloat,"Get Idle");
         #endif
           *ppDataToIn = (uint16_t*)&IdleRate;
@@ -190,14 +190,14 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
           break; //USB_HID_GET_IDLE
                                                         
         case USB_HID_GET_PROTOCOL:
-        #ifdef SWOLOG
+        #ifdef SWO_USB_LOG
           pFloat = stradd (pFloat,"Get Protocol");
         #endif 
           retval = 0; // Not boot Device. Not supported (STALL)
           break;
                                           
         default:
-        #ifdef SWOLOG
+        #ifdef SWO_USB_LOG
           pFloat = stradd (pFloat,"??");
         #endif  
         break;
@@ -220,27 +220,27 @@ uint8_t USB_OUT_requestHandler(USB_SetupPacket *pSetup, uint16_t *pDataOut, uint
   uint8_t retval = 1;
   if ((pSetup->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_STANDARD)	//Request type Standard ? 
   {
-  #ifdef SWOLOG
+  #ifdef SWO_USB_LOG
     pFloat = stradd (pFloat,"\r\nSTANDARD ");
   #endif
     switch (pSetup->bRequest) 
     {
       case USB_REQUEST_CLEAR_FEATURE:
-      #ifdef SWOLOG
+      #ifdef SWO_USB_LOG
          pFloat = stradd (pFloat,"CLEAR_FEATURE");
       #endif
                                                           // here need manipulate EP1 status       
         break;  //USB_REQUEST_CLEAR_FEATURE
     
       case USB_REQUEST_SET_ADDRESS:
-    #ifdef SWOLOG
+    #ifdef SWO_USB_LOG
       pFloat = stradd (pFloat,"SET_ADDRESS");
     #endif 
       USB_setAddress(pSetup->wValue.L);
       break;  //USB_REQUEST_SET_ADDRESS
     
       case USB_REQUEST_SET_CONFIGURATION:
-    #ifdef SWOLOG
+    #ifdef SWO_USB_LOG
       pFloat = stradd (pFloat,"SET_CONF");
     #endif
       if (pSetup->wValue.L == 1)
@@ -248,7 +248,7 @@ uint8_t USB_OUT_requestHandler(USB_SetupPacket *pSetup, uint16_t *pDataOut, uint
       break;
       
       case USB_REQUEST_SET_FEATURE:
-    #ifdef SWOLOG
+    #ifdef SWO_USB_LOG
       pFloat = stradd (pFloat,"SET_FEATURE");
     #endif 
                                                              // here need manipulate EP1 status
@@ -256,7 +256,7 @@ uint8_t USB_OUT_requestHandler(USB_SetupPacket *pSetup, uint16_t *pDataOut, uint
     
     default:
       asm("nop");
-    #ifdef SWOLOG
+    #ifdef SWO_USB_LOG
       pFloat = stradd (pFloat,"??");
     #endif
     } //switch (pSetup->bRequest)
@@ -264,32 +264,32 @@ uint8_t USB_OUT_requestHandler(USB_SetupPacket *pSetup, uint16_t *pDataOut, uint
   
   else if ((pSetup->bmRequestType & USB_REQUEST_TYPE) == USB_REQUEST_CLASS)
     {
-   #ifdef SWOLOG
+   #ifdef SWO_USB_LOG
     pFloat = stradd (pFloat,"\r\nCLASS HID ");
   #endif
       switch (pSetup->bRequest)
       {
         case USB_HID_SET_IDLE:
-        #ifdef SWOLOG
+        #ifdef SWO_USB_LOG
           pFloat = stradd (pFloat,"SET_IDLE");
         #endif
           IdleRate = pSetup->wValue.H;
           break;
 
         case USB_HID_SET_PROTOCOL:
-        #ifdef SWOLOG
+        #ifdef SWO_USB_LOG
           pFloat = stradd (pFloat,"Set protocol");
         #endif  
           break;
         
         case USB_HID_SET_REPORT:
-        #ifdef SWOLOG
+        #ifdef SWO_USB_LOG
           pFloat = stradd (pFloat,"SET_REPORT ");
         #endif
           switch(pSetup->wValue.H)
           {
             case USB_HID_REPORT_IN:
-            #ifdef SWOLOG
+            #ifdef SWO_USB_LOG
               pFloat = stradd (pFloat,"IN");
             #endif
               if (USB_Callback.SetInputReport)
@@ -297,7 +297,7 @@ uint8_t USB_OUT_requestHandler(USB_SetupPacket *pSetup, uint16_t *pDataOut, uint
               break;
               
             case USB_HID_REPORT_OUT:
-            #ifdef SWOLOG
+            #ifdef SWO_USB_LOG
               pFloat = stradd (pFloat,"OUT");
             #endif
               if (USB_Callback.SetOutputReport)
@@ -305,7 +305,7 @@ uint8_t USB_OUT_requestHandler(USB_SetupPacket *pSetup, uint16_t *pDataOut, uint
               break;
               
             case USB_HID_REPORT_FEATURE: 
-            #ifdef SWOLOG
+            #ifdef SWO_USB_LOG
               pFloat = stradd (pFloat,"FEATURE");
             #endif
               if (USB_Callback.SetFeatureReport)
@@ -313,7 +313,7 @@ uint8_t USB_OUT_requestHandler(USB_SetupPacket *pSetup, uint16_t *pDataOut, uint
               break;
 
             default: 
-            #ifdef SWOLOG
+            #ifdef SWO_USB_LOG
               pFloat = stradd (pFloat,"???");
             #endif 
               asm("nop");

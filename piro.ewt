@@ -2392,6 +2392,9 @@
             <name>$PROJ_DIR$\Src\oringbuf.c</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\Src\SWOfunction.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\Src\systick.c</name>
         </file>
         <file>
