@@ -2,13 +2,13 @@
 This project describes a USB pyrometric temperature sensor on STM32F103 and MLX90614.
 ## Main features:
 1. Bare metal programming style for USB and I2C. No bulky libraries. There's only the necessary functions, correctly developed according to USB 2.0 and HID 1.11 protocols.
-This is very well suited for developers who want to learn deeply into the algorithm of the USB and I2C  peripherals about STM32.
+This is very well suited for developers who want to learn deeply into the algorithm of the USB and I2C  peripherals about STM32. You can see low level very simple unlike HAL library. USB contained only in 2 files: USB_packet.c, and USB_transaction.c. USB_packet.c described OSI packet level and lower. USB_transaction.c decribed transport OSI level and higer.
 
 2. All work is built in interrupts. The main loop used only for Log output througt the SWO interface.  It will be completely free when logging is disabled.
 
 3. The  I2C state machine is developed with errors control on the bus. It's does not glutch with any collisions: breaks or short circuits to zero or to each other.
 
-4. USB works according to the HID protocol. The HID descriptor describes the standard class Sensor Thermometer. You don't need drivers for it. Unlike Custom Hid, you will see it  exactly as a Thermometer in the device manager, and you will be able to work from a high-level application  as a sensor, and not as an unknown Custom HID device. In the standard descriptor from "hutrr39b_0.pdf " added the ability to change a polling nterval for reports.
+4. USB works according to the HID protocol. The HID descriptor describes the standard class Sensor Thermometer. You don't need drivers for it. Unlike Custom Hid, you will see it  exactly as a Thermometer in the device manager, and you will be able to work from a high-level application  as a sensor, and not as an unknown Custom HID device. In the standard descriptor from "hutrr39b_0.pdf " added the ability to change a polling interval for reports.
 
 5. There is great logging. Every interrupt, every request for a descriptor, every data transfer is written to the Log buffer. The transfer from the log buffer to the development environment occurs via the SWO interface at a speed of about 2 Mbps.
 
