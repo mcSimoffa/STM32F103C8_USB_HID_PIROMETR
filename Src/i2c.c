@@ -4,8 +4,8 @@
 
 I2C_STATES    i2cState = I2C_STATE_FREE;
 SMBUS_STATES  smbusState = SMBUS_FREE; 
-uint8_t addr;
-uint8_t comm;
+uint8_t addr; //Address I2C Slave Device
+uint8_t comm; //command for lave Device
 uint16_t data;
 void (*Callback)(uint16_t *pData);
 
@@ -13,6 +13,26 @@ void (*Callback)(uint16_t *pData);
   char debugSmbusBuf[256];
   char *pheadBuf;
 #endif
+
+/* *************************************************************
+This routine first copy data from register to storage
+next execute software reset
+next it copy storaged data back
+************************************************************* */ 
+void I2C_Reinit()
+{
+  uint16_t copy_CR1=(I2C1->CR1) & ~I2C_CR1_PE & ~I2C_CR1_START & ~I2C_CR1_STOP;
+  uint16_t copy_CR2 = I2C1->CR2;
+  uint16_t copy_CCR = I2C1->CCR;
+  uint16_t copy_TRISE = I2C1->TRISE;
+  I2C1->CR1 |= I2C_CR1_SWRST; //Reset I2C
+  asm("nop");
+  I2C1->CR1 &= ~I2C_CR1_SWRST;
+  I2C1->TRISE = copy_TRISE;
+  I2C1->CCR = copy_CCR;
+  I2C1->CR2 = copy_CR2;
+  I2C1->CR1 = copy_CR1;
+}
   
 /* *************************************************************
 I2C1 interrupt Handler
@@ -20,10 +40,14 @@ I2C1 interrupt Handler
 void I2C1_EV_IRQHandler()
 {
   uint16_t sr1 = I2C1->SR1;
+  uint16_t sr2 = I2C1->SR2;
 #ifdef SWO_SMBUS_LOG
-  pheadBuf = stradd (debugSmbusBuf, "\r\n");  //new debugging string
+  pheadBuf = stradd (debugSmbusBuf, "\r\n\nTAKT # ");
+  pheadBuf = itoa(DWT->CYCCNT, pheadBuf,10,0);
   pheadBuf = stradd (pheadBuf, "\r\nSR1=");
   pheadBuf = itoa(sr1, pheadBuf,2,0);
+  pheadBuf = stradd (pheadBuf, "\r\nSR2=");
+  pheadBuf = itoa(sr2, pheadBuf,2,0);
 #endif
   if (smbusState == SMBUS_READ_WORD)
   {
@@ -44,7 +68,7 @@ void I2C1_EV_IRQHandler()
         if (sr1 & I2C_SR1_ADDR)
         {
           i2cState = I2C_FIRST_EV6;
-          (void) I2C1->SR2;
+          //(void) I2C1->SR2;
           I2C1->DR = comm;
         #ifdef SWO_SMBUS_LOG
           pheadBuf = stradd (pheadBuf, "\r\nCOMMAND sent");
@@ -56,6 +80,7 @@ void I2C1_EV_IRQHandler()
         if (sr1 & I2C_SR1_TXE)
         {
           i2cState = I2C_STATE_RESTART;
+          I2C1->CR2 &= ~I2C_CR2_ITBUFEN;
           I2C1->CR1 |= I2C_CR1_START;
         #ifdef SWO_SMBUS_LOG
           pheadBuf = stradd (pheadBuf, "\r\nRESTART sent");
@@ -77,11 +102,11 @@ void I2C1_EV_IRQHandler()
       case I2C_SECOND_EV5: 
         if (sr1 & I2C_SR1_ADDR)
         { 
-          (void) I2C1->SR2;
+          //(void) I2C1->SR2;
           i2cState = I2C_STATE_DATAWAIT;
           I2C1->CR1 &= ~I2C_CR1_ACK;
         #ifdef SWO_SMBUS_LOG
-          pheadBuf = stradd (pheadBuf, "\r\nWait wData");
+          pheadBuf = stradd (pheadBuf, "\r\nWait Data NACK");
         #endif
         }
         break;
@@ -89,28 +114,19 @@ void I2C1_EV_IRQHandler()
       case I2C_STATE_DATAWAIT:
         if (sr1 & I2C_SR1_BTF)
         {
-          i2cState = I2C_STATE_FREEWAIT;
+          i2cState = I2C_STATE_FREE;
+          smbusState = SMBUS_FREE;
           I2C1->CR1 |= I2C_CR1_STOP;
           data =  (uint8_t)I2C1->DR;
           data |= ((uint8_t)I2C1->DR) << 8;
           if (Callback)
             Callback(&data);
         #ifdef SWO_SMBUS_LOG
-          pheadBuf = stradd (pheadBuf, "\r\nStop sent, Road wData");
+          pheadBuf = stradd (pheadBuf, "\r\nStop sent,wData=");
+          pheadBuf = itoa(data, pheadBuf,16,0);
         #endif  
         }
         break;
-       
-      case I2C_STATE_FREEWAIT:
-        if (!(I2C1->CR1 & I2C_CR1_STOP))
-        {
-          i2cState = I2C_STATE_FREE;
-          smbusState = SMBUS_FREE;
-        #ifdef SWO_SMBUS_LOG
-          pheadBuf = stradd (pheadBuf, "\r\nLine free");
-        #endif  
-        }
-        break; 
       
     default:
       i2cState = I2C_STATE_FREE;
@@ -118,11 +134,14 @@ void I2C1_EV_IRQHandler()
   }
   else if (smbusState == SMBUS_WRITE_WORD)
   {
-    asm("nop");
-    
-    
-    
+    asm("nop"); //TODO
   }
+   if (sr1 & I2C_SR1_STOPF) //it's troble situation for Master (it became Slave). It Occur when line SCL SDA broken or short circuit have 
+   {
+    I2C_Reinit();
+    i2cState = I2C_STATE_FREE;
+    smbusState = SMBUS_FREE;
+   }
 #ifdef SWO_SMBUS_LOG  
   putlog(debugSmbusBuf, pheadBuf);
 #endif  
@@ -130,18 +149,30 @@ void I2C1_EV_IRQHandler()
 
 /* *************************************************************
 I2C1 Errror interrupt Handler
+if errors occur this routine execute Software Reset
+and change state machine to ready for new command
 ************************************************************* */
 void I2C1_ER_IRQHandler()
 {
 #ifdef SWO_SMBUS_LOG
-  pheadBuf = stradd (debugSmbusBuf, "\r\nERROR");  //new debugging string
+  pheadBuf = stradd (debugSmbusBuf, "\r\nERROR");
+  pheadBuf = stradd (pheadBuf, "\r\nSR1=");
+  pheadBuf = itoa(I2C1->SR1, pheadBuf,2,0);
+  pheadBuf = stradd (pheadBuf, "\r\nSR2=");
+  pheadBuf = itoa(I2C1->SR2, pheadBuf,2,0);
+  pheadBuf = stradd (pheadBuf, "\r\nError! Do reinit"); 
+#endif
+  I2C_Reinit();
+#ifdef SWO_SMBUS_LOG
   pheadBuf = stradd (pheadBuf, "\r\nSR1=");
   pheadBuf = itoa(I2C1->SR1, pheadBuf,2,0);
   pheadBuf = stradd (pheadBuf, "\r\nSR2=");
   pheadBuf = itoa(I2C1->SR2, pheadBuf,2,0);
   putlog(debugSmbusBuf, pheadBuf);
 #endif
-  asm("nop"); // I2C1 Error
+  i2cState = I2C_STATE_FREE;
+  smbusState = SMBUS_FREE;
+  
 }
 
 
@@ -156,10 +187,33 @@ return: 0 - failed start SMBus command Read_Word
 ************************************************************* */
 uint8_t I2C_ReadWord(uint8_t address, uint8_t command, void (*ReadWCallback)(uint16_t *pData))
 {
-  if (  (smbusState == SMBUS_FREE) &&
-        (!(I2C1->SR2 & I2C_SR2_BUSY)) )
+  if (!(I2C1->CR1 & I2C_CR1_PE))
   {
-    uint16_t sr1 = I2C1->SR1;
+    I2C1->CR1  |= I2C_CR1_PE;
+    return(0);
+  }
+  uint16_t sr1 = I2C1->SR1;
+  uint16_t sr2 = I2C1->SR2;
+  //master executed STOP command and clear STOP bit 
+  //& machine state ready to new command
+  if ( (smbusState == SMBUS_FREE) && (!(I2C1->CR1 & I2C_CR1_STOP)) )
+  {
+    if (sr2 & I2C_SR2_BUSY) //it's troble situation: have permanent BUSY bit
+    {
+      I2C_Reinit();
+      return(0);
+    }
+  #ifdef SWO_SMBUS_LOG
+    DWT->CYCCNT = 0;
+    pheadBuf = stradd (debugSmbusBuf, "\r\n\n\n----- TAKT # ");
+    pheadBuf = itoa(DWT->CYCCNT, pheadBuf,10,0);
+    pheadBuf = stradd (pheadBuf, "\r\nSR1=");
+    pheadBuf = itoa(sr1, pheadBuf,2,0);
+    pheadBuf = stradd (pheadBuf, "\r\nSR2=");
+    pheadBuf = itoa(sr2, pheadBuf,2,0);
+    pheadBuf = stradd (pheadBuf, "\r\nSTART sent");
+    putlog(debugSmbusBuf, pheadBuf);
+  #endif
     smbusState = SMBUS_READ_WORD;
     i2cState = I2C_FIRST_EV5;
     addr = address;
@@ -167,164 +221,7 @@ uint8_t I2C_ReadWord(uint8_t address, uint8_t command, void (*ReadWCallback)(uin
     Callback = ReadWCallback;
     I2C1->CR1 |= I2C_CR1_START; //stage send START
     I2C1->CR1 |= I2C_CR1_ACK;
-  #ifdef SWO_SMBUS_LOG
-    pheadBuf = stradd (debugSmbusBuf, "\r\n");
-    pheadBuf = stradd (pheadBuf, "\r\nSR1=");
-    pheadBuf = itoa(sr1, pheadBuf,2,0);
-    pheadBuf = stradd (pheadBuf, "\r\nSTART sent");
-    putlog(debugSmbusBuf, pheadBuf);
-  #endif
     return(1);
   }
   return(0);
 }
-
-    
- /* 
-  while (!(I2C1->sr1 & I2C_SR1_ADDR))     // wait ADDR Reset in Slave Read sr1 SR2
-    if(I2C1->sr1 & I2C_SR1_AF)           // if NACK
-      while(1) {};  
-  (void) I2C1->SR2;                     // clear ADDR
-  
-  I2C1->DR=0x07;  //read temperature
-  while (!(I2C1->sr1 & I2C_SR1_TXE))        // wait BTF  Reset by Write DR
-    if(I2C1->sr1 & I2C_SR1_AF)                // if NACK
-      while(1) {};
-  
-  I2C1->CR1 |= I2C_CR1_START;           //restart
-  while (!(I2C1->sr1 & I2C_SR1_SB));    // wait SB
-    asm("nop");
-  
-  I2C1->DR = (addr<<1) | READ;
-  while (!(I2C1->sr1 & I2C_SR1_ADDR))        // wait ADDR
-    if(I2C1->sr1 & I2C_SR1_AF)           // if NACK
-      while(1) {};
-  (void) I2C1->SR2;                           // clear ADDR
-  
-  while (!(I2C1->sr1 & I2C_SR1_RXNE))        // wait incoming data Reset by Read DR
-    if(I2C1->sr1 & I2C_SR1_AF)                // if NACK
-      while(1) {};
- 
- uint16_t indata = (uint8_t)I2C1->DR;
- while (!(I2C1->sr1 & I2C_SR1_RXNE))        // wait incoming data
-    if(I2C1->sr1 & I2C_SR1_AF)                // if NACK
-      while(1) {};
- indata |= ((uint8_t)I2C1->DR)<<8;
- I2C1->CR1 |= I2C_CR1_STOP;
- //nujno li CR1_ASK ??
-
-
-void I2C1_EV_IRQHandler()
-{
-  uint16_t sr1 = I2C1->SR1;
-#ifdef SWO_SMBUS_LOG
-  pheadBuf = stradd (debugSmbusBuf, "\r\n");  //new debugging string
-  pheadBuf = stradd (pheadBuf, "\r\nSR1=");
-  pheadBuf = itoa(sr1, pheadBuf,2,0);
-#endif
-  if (smbusState == SMBUS_READ_WORD)
-  {
-    switch(i2cState)
-    {
-    case I2C_STATE_STOP:
-      if(sr1 & I2C_SR1_SB)
-      {
-        i2cState = I2C_STATE_START;
-        I2C1->DR = (addr<<1) | WRITE;
-      #ifdef SWO_SMBUS_LOG
-        pheadBuf = stradd (pheadBuf, "\r\nADDR | W sent");
-      #endif      
-      }
-      break;
-      
-      case I2C_STATE_START:
-        if (sr1 & I2C_SR1_ADDR)
-        {
-          (void) I2C1->SR2;
-          i2cState = I2C_STATE_ADDRESS_W;
-          I2C1->DR = comm;
-        #ifdef SWO_SMBUS_LOG
-          pheadBuf = stradd (pheadBuf, "\r\nCOMMAND sent");
-        #endif
-        }
-        break;
-       
-      case I2C_STATE_ADDRESS_W:  
-        if (sr1 & I2C_SR1_TXE)
-        {
-          i2cState = I2C_STATE_COMMAND;
-          I2C1->CR1 |= I2C_CR1_START;
-        #ifdef SWO_SMBUS_LOG
-          pheadBuf = stradd (pheadBuf, "\r\nRESTART sent");
-        #endif
-        }
-        break;
-        
-      case I2C_STATE_COMMAND:
-        if(sr1 & I2C_SR1_SB)
-        {
-          i2cState = I2C_STATE_RESTART;
-          I2C1->DR = (addr<<1) | READ;
-        #ifdef SWO_SMBUS_LOG
-          pheadBuf = stradd (pheadBuf, "\r\nADDR | R sent");
-        #endif
-        }
-        break;
-      
-      case I2C_STATE_RESTART: 
-        if (sr1 & I2C_SR1_ADDR)
-        {
-          (void) I2C1->SR2;
-          i2cState = I2C_STATE_ADDRESS_R;
-          I2C1->CR1 |= I2C_CR1_ACK;
-        #ifdef SWO_SMBUS_LOG
-          pheadBuf = stradd (pheadBuf, "\r\nWait low byte");
-        #endif
-        }
-        break;
-       
-      case I2C_STATE_ADDRESS_R:
-        if (sr1 & I2C_SR1_RXNE)
-        {
-          i2cState = I2C_STATE_READ_LOW;
-          data = (uint8_t)I2C1->DR;
-        #ifdef SWO_SMBUS_LOG
-          pheadBuf = stradd (pheadBuf, "\r\nWait high byte");
-        #endif  
-        }
-        break;
-       
-      case I2C_STATE_READ_LOW:
-        if (sr1 & I2C_SR1_RXNE)
-        {
-          data |= ((uint8_t)I2C1->DR)<<8;
-          I2C1->CR1 |= I2C_CR1_STOP;
-        #ifdef SWO_SMBUS_LOG
-          pheadBuf = stradd (pheadBuf, "\r\nSTOP sent");
-        #endif
-          if (Callback)
-          {
-            Callback();
-            smbusState = SMBUS_FREE;
-          }
-        }
-        break; 
-      
-    default:
-      i2cState = I2C_STATE_STOP;
-    } //switch(i2cState)
-  }
-  else if (smbusState == SMBUS_WRITE_WORD)
-  {
-    asm("nop");
-    
-    
-    
-  }
-#ifdef SWO_SMBUS_LOG  
-  putlog(debugSmbusBuf, pheadBuf);
-#endif  
-}// I2C1 Event
-
-
-*/

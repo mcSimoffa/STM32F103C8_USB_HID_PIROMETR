@@ -9,12 +9,27 @@
 #include "usb_interface.h"
 #include "i2c.h"
 
-//for SWO logging activate SWO_USB_LOG in Options\C++ compiler\Defined Symbol
+//for USB SWO logging activate SWO_USB_LOG in Options\C++ compiler\Defined Symbol
+//for I2C SWO logging activate SWO_I2C_LOG in Options\C++ compiler\Defined Symbol
 
 #define SYSTICK_DIVIDER 72000
-#define PCLK1 36  //APB1 clock (see APB1_DIVIDER in system_stm32f10x.c)
-#define MLX90614_ADDR 0x5A
+#define MLX90614_ADDR 0x5A    //standard Slave Address for MLX90614
 #define DELTA_KELVIN_CELSIUM  27315 // 0K = 273.15C
+#define PCLK1 36  //APB1 clock (see APB1_DIVIDER in system_stm32f10x.c)
+
+//Sensor state: extract from report descriptor
+#define SENSOR_STATE_UNKNOWN        0x00
+#define SENSOR_STATE_READY          0x01
+#define SENSOR_STATE_NOT_AVAILABLE  0x02
+#define SENSOR_STATE_NO_DATA        0x03
+#define SENSOR_STATE_INITIALIZING   0x04
+#define SENSOR_STATE_ACCESS_DENIED  0x05
+#define SENSOR_STATE_ERROR          0x06
+
+//Sensor event: extract from report descriptor
+#define SENSOR_EVENT_UNKNOWN        0x00
+#define SENSOR_EVENT_STATE_CHANGED  0x01
+#define SENSOR_EVENT_DATA_UPDATED   0x03
 
 //GPIO A
 #define USB_ENABLE 7
@@ -35,11 +50,11 @@ void GotMLXtemperature(uint16_t *pData);
 void FlashOneSec();
 void Sender();
 
-//USB Callback
+//USB Callback 
 extern Typedef_USB_Callback USB_Callback;
 void USB_GetFeature(uint8_t reportN, uint16_t **ppReport, uint16_t *len);
 void USB_SetFeature(uint8_t reportN, uint8_t *pReport, uint16_t len);
-void USB_SampleSend(uint8_t epn);
+void USB_SetIdle(uint8_t *idle);
 
 struct  //it described in section "feature reports" HID Report Descriptor
   {
@@ -49,7 +64,7 @@ struct  //it described in section "feature reports" HID Report Descriptor
     int16_t  minimum_temp;
   } HID_SenrorFeature={
     .minimum_report_interval = USB_EP_MIN_REPORT_INTERVAL,
-    .report_interval = USB_EP_MIN_REPORT_INTERVAL,
+    .report_interval = REPORT_INTERVAL_AT_START,
     .maximum_temp = 15000,    //150 degreed Celsium
     .minimum_temp = -4000 };  //-40 degreed Celsium
 
@@ -59,12 +74,11 @@ struct  //it described in section "input reports (transmit)" HID Report Descript
   uint8_t event;
   int16_t temperature;
 } HID_SensorInReport={
-  .state = 1,
-  .event = 3,
+  .state = SENSOR_STATE_UNKNOWN,
+  .event = SENSOR_EVENT_UNKNOWN,
   .temperature = 0 };
 
-uint8_t  isNewSampleTemperature = 1; //flag "Have a new sample"
-uint16_t MLXpreviousData;
+uint8_t  isNewSampleTemperature = 0; //flag "Have a new sample"
   
 void main()
 {
@@ -72,6 +86,7 @@ void main()
     | RCC_APB2ENR_IOPAEN    //GPIO A  (use as USB)
     | RCC_APB2ENR_IOPBEN    //GPIO B  (use as I2C) 
     | RCC_APB2ENR_AFIOEN; // Alternate function enable
+  
   //GPIO A init
   PinParametr GPIO_descript[3];
   GPIO_descript[0].PinPos=USB_DM;
@@ -84,8 +99,7 @@ void main()
   GPIO_descript[2].PinMode=GPIO_MODE_OUTPUT50_OPEN_DRAIN;
   CLL_GPIO_SetPinMode(GPIOA,GPIO_descript,3);   
   GPIO_SET(GPIOA,1<<USB_ENABLE); //Disable USB pullup resistor 1k5
-  
-  
+    
   //GPIO B init
   RCC->APB1ENR |= RCC_APB1ENR_I2C1EN; //Clock I2C must be enabled BEFORE be GPIO init which links on I2C !!!!!!!! Else BUSY flag permanent ON
   GPIO_descript[0].PinPos=SCL1;
@@ -101,6 +115,23 @@ void main()
   CLL_GPIO_SetPinMode(GPIOC,GPIO_descript,1);
   GPIO_SET(GPIOC,1<<ONBOARD_LED); //off LED 
   
+ #if defined (SWO_USB_LOG) || (SWO_SMBUS_LOG)
+   //SWO debug ON
+  DBGMCU->CR &= ~(DBGMCU_CR_TRACE_MODE_0 | DBGMCU_CR_TRACE_MODE_0);
+  DBGMCU->CR |= DBGMCU_CR_TRACE_IOEN;
+  // JTAG-DP Disabled and SW-DP Enabled
+  AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_1;
+  
+  //Turn ON the takt core couner
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;// Enable DWT
+  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk; //counter ON
+  DWT->CYCCNT = 0; //start value = 0
+  
+  if (!Oringbuf_Create(10240))
+    exceptionFail();   //don't have memory maybe
+  uint8_t toSWO;
+#endif
+  
   //I2C1 init
   I2C1->OAR2  &=  ~I2C_OAR2_ENDUAL;   //Dual adressing disable
   I2C1->CR1 = I2C_CR1_SMBUS;  //SMBus, Device, disable PEC, stretch, Disabled I2C1 peripherial    
@@ -114,23 +145,8 @@ void main()
   I2C1->CCR = 180;  //36 000 000 / (100 000*2)
   NVIC_EnableIRQ(I2C1_EV_IRQn);
   NVIC_EnableIRQ(I2C1_ER_IRQn);
-  I2C1->CR1  |= I2C_CR1_PE; //Enable I2C
+  I2C1->CR1  |= I2C_CR1_PE; //Enable I2C1
  
-  uint8_t res = I2C_ReadWord(MLX90614_ADDR, 0x07, GotMLXtemperature);
-  
-#if defined (SWO_USB_LOG) || (SWO_SMBUS_LOG)
-   //SWO debug ON
-  DBGMCU->CR &= ~(DBGMCU_CR_TRACE_MODE_0 | DBGMCU_CR_TRACE_MODE_0);
-  DBGMCU->CR |= DBGMCU_CR_TRACE_IOEN;
-  // JTAG-DP Disabled and SW-DP Enabled
-  AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_1;
-  
-  if (!Oringbuf_Create(10240))
-    exceptionFail();   //don't have memory maybe
-  uint8_t toSWO;
-#endif
-  
-  
   if (!SysTick_TimersCreate(2))
     exceptionFail();   //don't have memory maybe
   SysTick_TimerInit(0, Sender);
@@ -140,20 +156,13 @@ void main()
   while (SysTick_Config(SYSTICK_DIVIDER)==1)	
     asm("nop");	 //reason - bad divider 
   NVIC_EnableIRQ(SysTick_IRQn);
-  SysTick_TimerRun(0, USB_EP_MIN_REPORT_INTERVAL);  //timer to send USB IN Report
   SysTick_TimerRun(1, 1000);  //it's no need
-  
-#ifdef DEBUG
-  //Turn ON the takt core couner
-  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;// Enable DWT
-  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk; //counter ON
-  DWT->CYCCNT = 0; //start value = 0
-#endif
   
   //USB callBack function assign
   USB_Callback.GetFeatureReport = USB_GetFeature;
   USB_Callback.SetFeatureReport = USB_SetFeature;
-  USB_Callback.EPtransmitDone = USB_SampleSend;
+  USB_Callback.SetIdle = USB_SetIdle;
+
   
   //USB initialize
   GPIO_RESET(GPIOA,1<<USB_ENABLE); //Enable USB pullup resistor 1k5
@@ -186,32 +195,49 @@ void FlashOneSec()
 }
 
 /* ****************************************************************************
+This callback called when the SET_IDLE request incoming
+and it Turn ON timer for sampling the temperature Sensor
+idle - pointer to IDLE value. Usually it's Zero
+**************************************************************************** */
+void USB_SetIdle(uint8_t *idle)
+{
+  SysTick_TimerRun(0, REPORT_INTERVAL_AT_START);  //sampling temperature rate from MLX90614
+}
+/* ****************************************************************************
+This callback called as the independed timer triggered
+it's launch data transmit from MLX90614 to SMT32
+**************************************************************************** */
+void Sender()
+{
+  //here convenient to use Break Pint for  report send step By step
+  if (isNewSampleTemperature)
+    if (USB_sendReport(1,(uint16_t*)&HID_SensorInReport,sizeof(HID_SensorInReport)))
+      isNewSampleTemperature = 0;
+  
+   if (!I2C_ReadWord(MLX90614_ADDR, 0x07, GotMLXtemperature))
+    {
+      HID_SensorInReport.state = SENSOR_STATE_ERROR;  //failed launch transrer temperature data from MLX90614
+      HID_SensorInReport.event = SENSOR_EVENT_STATE_CHANGED;
+      isNewSampleTemperature = 1;
+    }
+}
+
+/* ****************************************************************************
 This callback called as the pirometr semsor MLX90614 take the temperature value
 pData - pointer to word of temperature value
 **************************************************************************** */
 void GotMLXtemperature(uint16_t *pData)
 {
+  static uint16_t MLXpreviousData;
   if (MLXpreviousData != *pData)
   {
-    (GPIO_READ_OUTPUT(GPIOC,1<<ONBOARD_LED)==0) ?  GPIO_SET(GPIOC,1<<ONBOARD_LED):GPIO_RESET(GPIOC,1<<ONBOARD_LED);
+    (GPIO_READ_OUTPUT(GPIOC,1<<ONBOARD_LED)==0) ?  GPIO_SET(GPIOC,1<<ONBOARD_LED):GPIO_RESET(GPIOC,1<<ONBOARD_LED); //LED indication
     isNewSampleTemperature = 1;
     MLXpreviousData = *pData;
-    HID_SensorInReport.temperature = (MLXpreviousData << 1) - DELTA_KELVIN_CELSIUM;
-    if (USB_sendReport(1,(uint16_t*)&HID_SensorInReport,sizeof(HID_SensorInReport)))
-    isNewSampleTemperature = 0;
+    HID_SensorInReport.temperature = (MLXpreviousData << 1) - DELTA_KELVIN_CELSIUM; //convertion to Celsium degreeds 
+    HID_SensorInReport.state = SENSOR_STATE_READY;
+    HID_SensorInReport.event = SENSOR_EVENT_DATA_UPDATED;
   }
-}
-/* ****************************************************************************
-This callback called as the independed timer triggered
-it's needs for send IN USB report if temperature refreshed
-**************************************************************************** */
-void Sender()
-{
-  HID_SensorInReport.temperature++; //emulated refresh temperaure sensor
-  isNewSampleTemperature = 1;
-  (GPIO_READ_OUTPUT(GPIOC,1<<ONBOARD_LED)==0) ?  GPIO_SET(GPIOC,1<<ONBOARD_LED):GPIO_RESET(GPIOC,1<<ONBOARD_LED);
-  if (USB_sendReport(1,(uint16_t*)&HID_SensorInReport,sizeof(HID_SensorInReport)))
-    isNewSampleTemperature = 0;
 }
 
 /* ****************************************************************************
@@ -242,16 +268,3 @@ void USB_SetFeature(uint8_t reportN, uint8_t *pReport, uint16_t len)
   SysTick_TimerRun(0, (uint32_t)HID_SenrorFeature.report_interval);
 }
 
-/* ****************************************************************************
-This callback called after succesfull transmit by Endpoint 
-epn - guilty endpoint number
-it's need if data sampling faster than Endpoint interrupt period
-**************************************************************************** */
-void USB_SampleSend(uint8_t epn)
-{
-  if (epn == 1)
-    if (isNewSampleTemperature)
-      if (USB_sendReport(epn,(uint16_t*)&HID_SensorInReport,sizeof(HID_SensorInReport)))
-        isNewSampleTemperature = 0;
-  
-}

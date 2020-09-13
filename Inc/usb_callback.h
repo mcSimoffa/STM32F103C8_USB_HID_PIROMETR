@@ -9,6 +9,7 @@ typedef struct
   void (*SetInputReport)    (uint8_t reportNum, uint8_t *pReport, uint16_t len);
   void (*SetOutputReport)   (uint8_t reportNum, uint8_t *pReport, uint16_t len);
   void (*SetFeatureReport)  (uint8_t reportNum, uint8_t *pReport, uint16_t len);
+  void (*SetIdle)           (uint8_t *pIdle);
   void (*EPtransmitDone)    (uint8_t EPnum);
   
 }Typedef_USB_Callback;

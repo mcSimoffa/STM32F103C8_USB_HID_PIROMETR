@@ -94,7 +94,9 @@ void USB_LP_CAN1_RX0_IRQHandler()
     { //Handle data on EP
       USB->ISTR &= ~USB_ISTR_CTR;
       USB_EPHandler((uint16_t)USB->ISTR);
+    #ifdef SWO_USB_LOG
       putlog(debugBuf, pFloat);
+    #endif
       return;
     }
     
@@ -144,7 +146,9 @@ void USB_LP_CAN1_RX0_IRQHandler()
             BDTable[i].TX_Count = 0;
           USBLIB_setStatTx(i, TX_VALID);
           EpData[i].SendState = EP_SEND_BUSY;
+        #ifdef SWO_USB_LOG
           printLogFlag = 1;
+        #endif
         } 
       }
     #ifdef SWO_USB_LOG

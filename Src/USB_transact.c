@@ -20,6 +20,7 @@ Typedef_USB_Callback USB_Callback={
   .SetInputReport = NULL, 
   .SetOutputReport = NULL,
   .SetFeatureReport = NULL,
+  .SetIdle = NULL,
   .EPtransmitDone = NULL
 };
 
@@ -51,6 +52,7 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
     break;  //USB_REQUEST_GET_CONFIGURATION
     
   case USB_REQUEST_GET_DESCRIPTOR:
+    {
   #ifdef SWO_USB_LOG
     pFloat = stradd (pFloat,"GET_DESCRIPTOR ");
     pFloat = stradd (pFloat,Log_descriptorName(pSetup));
@@ -64,8 +66,10 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
     } else
         retval = 0; //STALL
     break;  //USB_REQUEST_GET_DESCRIPTOR
+    }
 
   case USB_REQUEST_GET_INTERFACE:
+    {
   #ifdef SWO_USB_LOG
     pFloat = stradd (pFloat,"GET_INTFACE");
   #endif
@@ -74,44 +78,46 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
     *ppDataToIn = (uint16_t *)&InterfaceNumber;
     *sizeData = 1;
     break;  //USB_REQUEST_GET_INTERFACE
-    
-  case USB_REQUEST_GET_STATUS:
-  #ifdef SWO_USB_LOG
-    pFloat = stradd (pFloat,"GET_STATUS");
-  #endif
-    uint16_t StatusVal;
-    StatusVal = 0;
-    switch(pSetup->bmRequestType & USB_REQUEST_RECIPIENT)
-    {
-      case USB_REQUEST_DEVICE:
-      #ifdef SWO_USB_LOG
-        pFloat = stradd (pFloat," DEVICE");
-      #endif
-        *ppDataToIn = &DeviceStatus;
-        *sizeData = 2;
-        break;
-        
-      case USB_REQUEST_INTERFACE:
-      #ifdef SWO_USB_LOG
-        pFloat = stradd (pFloat," IFACE");
-      #endif
-        *ppDataToIn = &StatusVal;
-        *sizeData = 2;
-        break;
-        
-      case USB_REQUEST_ENDPOINT:
-      #ifdef SWO_USB_LOG
-        pFloat = stradd (pFloat," ENDP");
-      #endif
-        StatusVal = USB_geStatusEP(pSetup->wIndex.L);
-        *ppDataToIn = &StatusVal;
-        *sizeData = 2;  
-        break;
-        
-      default:
-        *sizeData = 0;  //ZLP
     }
-    break;  //USB_REQUEST_GET_STATUS   
+  case USB_REQUEST_GET_STATUS:
+    {
+    #ifdef SWO_USB_LOG
+      pFloat = stradd (pFloat,"GET_STATUS");
+    #endif
+      uint16_t StatusVal;
+      StatusVal = 0;
+      switch(pSetup->bmRequestType & USB_REQUEST_RECIPIENT)
+      {
+        case USB_REQUEST_DEVICE:
+        #ifdef SWO_USB_LOG
+          pFloat = stradd (pFloat," DEVICE");
+        #endif
+          *ppDataToIn = &DeviceStatus;
+          *sizeData = 2;
+          break;
+          
+        case USB_REQUEST_INTERFACE:
+        #ifdef SWO_USB_LOG
+          pFloat = stradd (pFloat," IFACE");
+        #endif
+          *ppDataToIn = &StatusVal;
+          *sizeData = 2;
+          break;
+          
+        case USB_REQUEST_ENDPOINT:
+        #ifdef SWO_USB_LOG
+          pFloat = stradd (pFloat," ENDP");
+        #endif
+          StatusVal = USB_geStatusEP(pSetup->wIndex.L);
+          *ppDataToIn = &StatusVal;
+          *sizeData = 2;  
+          break;
+          
+        default:
+          *sizeData = 0;  //ZLP
+      }
+      break;  //USB_REQUEST_GET_STATUS  
+    }
   } //switch (pSetup->bRequest)
  }  //Request type Standard 
  
@@ -123,63 +129,65 @@ uint8_t USB_IN_requestHandler(USB_SetupPacket *pSetup, uint16_t **ppDataToIn, ui
      switch (pSetup->bRequest) 
       {
         case USB_HID_GET_REPORT:
-        #ifdef SWO_USB_LOG
-          pFloat = stradd (pFloat,"GET REPORT");
-        #endif
-          uint16_t *pReportAddr;
-          uint16_t pReportSize;
-          pReportSize = pSetup->wLength;
-          switch(pSetup->wValue.H)
           {
-            case USB_HID_REPORT_IN:
-            #ifdef SWO_USB_LOG
-              pFloat = stradd (pFloat," IN");
-            #endif
-              if (USB_Callback.GetInputReport)
-              {
-                USB_Callback.GetInputReport(pSetup->wValue.L, &pReportAddr, &pReportSize);
-                *ppDataToIn = pReportAddr;
-                *sizeData = pReportSize;  
-              }
-              else
-                retval = 0; //STALL
-              break;  //USB_HID_REPORT_IN
-              
-            case USB_HID_REPORT_OUT:
-            #ifdef SWO_USB_LOG
-              pFloat = stradd (pFloat," OUT");
-            #endif
-              if (USB_Callback.GetOutputReport)
-              {
-                USB_Callback.GetOutputReport(pSetup->wValue.L, &pReportAddr, &pReportSize);
-                *ppDataToIn = pReportAddr;
-                *sizeData = pReportSize;  
-              }
-              else
-                retval = 0; //STALL
-              break;  //USB_HID_REPORT_OUT
-              
-            case USB_HID_REPORT_FEATURE:
-            #ifdef SWO_USB_LOG
-              pFloat = stradd (pFloat," FEATURE");
-            #endif
-              if (USB_Callback.GetFeatureReport)
-              {
-                USB_Callback.GetFeatureReport(pSetup->wValue.L, &pReportAddr, &pReportSize);
-                *ppDataToIn = pReportAddr;
-                *sizeData = pReportSize;  
-              }
-              else
-                retval = 0; //STALL
-              break;
+          #ifdef SWO_USB_LOG
+            pFloat = stradd (pFloat,"GET REPORT");
+          #endif
+            uint16_t *pReportAddr;
+            uint16_t pReportSize;
+            pReportSize = pSetup->wLength;
+            switch(pSetup->wValue.H)
+            {
+              case USB_HID_REPORT_IN:
+              #ifdef SWO_USB_LOG
+                pFloat = stradd (pFloat," IN");
+              #endif
+                if (USB_Callback.GetInputReport)
+                {
+                  USB_Callback.GetInputReport(pSetup->wValue.L, &pReportAddr, &pReportSize);
+                  *ppDataToIn = pReportAddr;
+                  *sizeData = pReportSize;  
+                }
+                else
+                  retval = 0; //STALL
+                break;  //USB_HID_REPORT_IN
+                
+              case USB_HID_REPORT_OUT:
+              #ifdef SWO_USB_LOG
+                pFloat = stradd (pFloat," OUT");
+              #endif
+                if (USB_Callback.GetOutputReport)
+                {
+                  USB_Callback.GetOutputReport(pSetup->wValue.L, &pReportAddr, &pReportSize);
+                  *ppDataToIn = pReportAddr;
+                  *sizeData = pReportSize;  
+                }
+                else
+                  retval = 0; //STALL
+                break;  //USB_HID_REPORT_OUT
+                
+              case USB_HID_REPORT_FEATURE:
+              #ifdef SWO_USB_LOG
+                pFloat = stradd (pFloat," FEATURE");
+              #endif
+                if (USB_Callback.GetFeatureReport)
+                {
+                  USB_Callback.GetFeatureReport(pSetup->wValue.L, &pReportAddr, &pReportSize);
+                  *ppDataToIn = pReportAddr;
+                  *sizeData = pReportSize;  
+                }
+                else
+                  retval = 0; //STALL
+                break;
 
-            default: 
-            #ifdef SWO_USB_LOG
-              pFloat = stradd (pFloat," ??");
-            #endif 
-              asm("nop");
-          } //switch(pSetup->wValue.H)
-          break;  //USB_HID_GET_REPORT
+              default: 
+              #ifdef SWO_USB_LOG
+                pFloat = stradd (pFloat," ??");
+              #endif 
+                asm("nop");
+            } //switch(pSetup->wValue.H)
+            break;  //USB_HID_GET_REPORT
+          }
                                                         
         case USB_HID_GET_IDLE:
         #ifdef SWO_USB_LOG
@@ -274,8 +282,10 @@ uint8_t USB_OUT_requestHandler(USB_SetupPacket *pSetup, uint16_t *pDataOut, uint
           pFloat = stradd (pFloat,"SET_IDLE");
         #endif
           IdleRate = pSetup->wValue.H;
+          if (USB_Callback.SetIdle)
+            USB_Callback.SetIdle(&IdleRate);
           break;
-
+          
         case USB_HID_SET_PROTOCOL:
         #ifdef SWO_USB_LOG
           pFloat = stradd (pFloat,"Set protocol");
